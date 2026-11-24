@@ -12,7 +12,7 @@ import { Sheet } from './Hud';
 export function floor5Estimate(s: GameState, crownsAfter: number): number | null {
   const best = s.prestige.bestFloor5;
   if (best === null) return null;
-  const ratio = crownFactorFor(s.prestige.crowns) / crownFactorFor(crownsAfter);
+  const ratio = crownFactorFor(s.prestige.crowns, s) / crownFactorFor(crownsAfter, s);
   return best * Math.pow(ratio, BALANCE.prestige.estimateExponent);
 }
 
@@ -51,7 +51,7 @@ export function PrestigeSheet({ onClose }: { onClose: () => void }) {
         <div className="crowns-now">
           <IconCrown size={30} />
           <span>
-            <b>{formatNumber(now, n, 0)}</b> {now === 1 ? 'Krone' : 'Kronen'} · Einkommen {formatMultiplier(crownFactorFor(now))}
+            <b>{formatNumber(now, n, 0)}</b> {now === 1 ? 'Krone' : 'Kronen'} · Einkommen {formatMultiplier(crownFactorFor(now, s))}
           </span>
         </div>
         {unlocked ? (
@@ -83,8 +83,8 @@ export function PrestigeSheet({ onClose }: { onClose: () => void }) {
             </tr>
             <tr>
               <td>Einkommen auf alles</td>
-              <td className="now">{formatMultiplier(crownFactorFor(now))}</td>
-              <td className="next">{formatMultiplier(crownFactorFor(after))}</td>
+              <td className="now">{formatMultiplier(crownFactorFor(now, s))}</td>
+              <td className="next">{formatMultiplier(crownFactorFor(after, s))}</td>
             </tr>
             {est !== null && s.prestige.bestFloor5 !== null && s.prestige.bestFloor5 >= 60 && (
               <tr>
@@ -105,6 +105,7 @@ export function PrestigeSheet({ onClose }: { onClose: () => void }) {
             <li>
               {managersKept} Manager – sie kehren an ihre Etage zurück, sobald du sie neu baust
             </li>
+            <li>Rezeptlabor: alle Forschungen und Rezeptpunkte</li>
             <li>Aufträge, Statistik und Einstellungen</li>
           </ul>
         </div>
@@ -112,7 +113,7 @@ export function PrestigeSheet({ onClose }: { onClose: () => void }) {
           <div className="section-title">Wird zurückgesetzt</div>
           <ul>
             <li>Geld und alle Level</li>
-            <li>Etagen 2–5</li>
+            <li>Etagen 2–8</li>
             <li>Aufzug, Versand und Lieferwagen</li>
             <li>Laufende Boni</li>
           </ul>
@@ -164,7 +165,7 @@ export function BrandSoldDialog({ crowns, onClose }: { crowns: number; onClose: 
           +{formatNumber(crowns, n, 0)} {crowns === 1 ? 'Krone' : 'Kronen'}
         </div>
         <p>
-          Du besitzt jetzt {formatNumber(s.prestige.crowns, n, 0)} Kronen. Alles bringt ab sofort {formatMultiplier(crownFactorFor(s.prestige.crowns))} Einkommen.
+          Du besitzt jetzt {formatNumber(s.prestige.crowns, n, 0)} Kronen. Alles bringt ab sofort {formatMultiplier(crownFactorFor(s.prestige.crowns, s))} Einkommen.
         </p>
         {s.managers.length > 0 && <p>Deine Manager warten schon: Sie übernehmen ihre Etage wieder, sobald sie gebaut ist.</p>}
         <button className="btn mint block buy-btn" onClick={onClose} style={{ marginTop: 10 }} data-testid="brand-sold-ok">

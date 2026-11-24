@@ -1,7 +1,7 @@
 /** Painted icons from the asset pack (no emoji, no external URLs). */
 import type { ReactElement } from 'react';
 import { artUrl } from '../render/assets';
-import { portraitKey } from '../config/content';
+import { FLOOR_ART, portraitKey } from '../config/content';
 import type { Manager } from '../sim/types';
 
 type P = { size?: number };
@@ -26,11 +26,12 @@ export const IconCheck = ({ size = 18 }: P) => <Img k="oberflaeche/bestaetigen" 
 export const IconWatch = ({ size = 28 }: P) => <Img k="oberflaeche/offline" size={size} />;
 export const IconSound = ({ size = 24 }: P) => <Img k="oberflaeche/ton" size={size} />;
 export const IconUpgrade = ({ size = 22 }: P) => <Img k="oberflaeche/upgrade" size={size} />;
+export const IconLab = ({ size = 28 }: P) => <Img k="forschung/labortisch" size={size} />;
 export const IconTruck = ({ size = 22 }: P) => <Img k="logistik/lieferwagen" size={size} />;
 export const IconLift = ({ size = 22 }: P) => <Img k="logistik/lastenaufzug" size={size} />;
 export const IconBox = ({ size = 22 }: P) => <Img k="produkte/lieferpaket" size={size} />;
 
-export const PRODUCT_ART = ['produkte/roestnibs', 'produkte/trinkkakao', 'produkte/schokoladentafel', 'produkte/pralinen', 'produkte/trueffel'];
+export const PRODUCT_ART = FLOOR_ART.map((a) => a.product);
 export const IconProduct = ({ floor, size = 40 }: { floor: number; size?: number }) => <Img k={PRODUCT_ART[floor]} size={size} />;
 
 /** Painted manager portrait in a round frame with the rarity colour. */

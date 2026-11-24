@@ -1,4 +1,6 @@
 import { BALANCE } from '../config/balance';
+import type { ResearchId } from '../config/research';
+import { startResearch } from '../sim/research';
 import { D, Decimal } from '../core/num';
 import * as A from '../sim/actions';
 import { analyzeFlow } from '../sim/formulas';
@@ -18,6 +20,8 @@ export type UiEvent =
   | { type: 'skill'; managerId: string; station: StationId }
   | { type: 'tap'; station: StationId; result: A.TapResult }
   | { type: 'brandSold'; crowns: number }
+  | { type: 'researchDone'; id: ResearchId; rank: number }
+  | { type: 'researchStarted'; id: ResearchId }
   | { type: 'fail'; station?: StationId };
 
 /** Rolling window of real sales for the "€/s" display. */
@@ -242,7 +246,13 @@ export class GameStore {
   drainSimEvents(): SimEvent[] {
     const ev = this.simEvents;
     this.simEvents = [];
-    for (const e of ev) if (e.type === 'sale') this.income.add(e.value);
+    for (const e of ev) {
+      if (e.type === 'sale') this.income.add(e.value);
+      else if (e.type === 'researchDone') {
+        this.emit({ type: 'researchDone', id: e.id, rank: e.rank });
+        this.persist(false);
+      }
+    }
     return ev;
   }
 
@@ -315,6 +325,17 @@ export class GameStore {
     }
     this.notify(true);
     return r;
+  }
+
+  /** Starts the next rank of a research node (costs Rezeptpunkte). */
+  research(id: ResearchId): boolean {
+    const ok = startResearch(this.state, id);
+    if (ok) {
+      this.emit({ type: 'researchStarted', id });
+      this.persist(false);
+    } else this.emit({ type: 'fail' });
+    this.notify(true);
+    return ok;
   }
 
   /** "Marke verkaufen": crowns for a fresh start (see actions.sellBrand). */

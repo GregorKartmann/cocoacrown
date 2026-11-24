@@ -5,7 +5,7 @@ import { P } from './palette';
 import { Bar, DISPLAY, LevelBadge, LiveText, ManagerSlot, Tag, label, liveLabel, plate } from './hud';
 import { L } from './layout';
 
-export const FLOOR_SHORT = ['Röstnibs', 'Trinkkakao', 'Tafeln', 'Pralinen', 'Trüffel'];
+export const FLOOR_SHORT = ['Röstnibs', 'Trinkkakao', 'Tafeln', 'Pralinen', 'Trüffel', 'Nougat', 'Ruby', 'Signature'];
 
 export interface StationHandlers {
   tap: (x: number, y: number) => void;
@@ -188,7 +188,7 @@ export class Figure extends Container {
 
 type V2 = [number, number];
 interface MachineFx {
-  steam: V2;
+  steam?: V2;
   lamp: V2;
   batch: string;
   batchAt: V2;
@@ -204,6 +204,12 @@ const MACHINE_FX: MachineFx[] = [
   { steam: [0.86, 0.09], lamp: [0.88, 0.58], batch: 'effekte/schokospritzer', batchAt: [0.48, 0.74], drips: [[0.37, 0.56], [0.485, 0.56], [0.6, 0.56]] },
   { steam: [0.5, 0.03], lamp: [0.64, 0.86], batch: 'effekte/schokospritzer', batchAt: [0.5, 0.6] },
   { steam: [0.83, 0.08], lamp: [0.86, 0.53], batch: 'effekte/goldglanz', batchAt: [0.4, 0.58], dust: [[0.27, 0.5], [0.4, 0.5], [0.53, 0.5]] },
+  // 6 Nougat-Mélangeur: glowing heater vents, turning stones, nuts flying from the hopper
+  { lamp: [0.86, 0.83], batch: 'effekte/haselnuss_wurf', batchAt: [0.6, 0.12], glow: [0.86, 0.8], swirl: [0.38, 0.42] },
+  // 7 Ruby-Temperieranlage: steam from the lid, swirl in the glass tank, ruby splash at the tap
+  { steam: [0.38, 0.04], lamp: [0.8, 0.46], batch: 'effekte/ruby_spritzer', batchAt: [0.36, 0.7], swirl: [0.38, 0.42], drips: [[0.36, 0.72]] },
+  // 8 Geschenkbox-Presse: press light on the base, golden seal shine on the box
+  { lamp: [0.55, 0.9], batch: 'effekte/siegel_glanz', batchAt: [0.55, 0.55], dust: [[0.45, 0.62], [0.55, 0.62], [0.65, 0.62]] },
 ];
 
 /**
@@ -229,7 +235,7 @@ export class MachineView extends Container {
   tier = 1;
 
   constructor(
-    floor: number,
+    private floor: number,
     maxW: number,
     maxH: number,
     private fx: Fx,
@@ -270,10 +276,11 @@ export class MachineView extends Container {
       this.upgrades.addChild(g, n);
     }
     if (tier >= 3) {
-      const pl = sprite('maschinen/upgrades/kronenplakette', 0.5, 0.5);
-      pl.width = 32;
+      const seal = this.floor === 7;
+      const pl = sprite(seal ? 'maschinen/upgrades/kronensiegel' : 'maschinen/upgrades/kronenplakette', 0.5, 0.5);
+      pl.width = seal ? 28 : 32;
       pl.scale.y = pl.scale.x;
-      const p = this.at([0.5, 0.9]);
+      const p = this.at(seal ? [0.56, 0.22] : [0.5, 0.9]);
       pl.position.set(p.x, p.y);
       const lamp = sprite('maschinen/upgrades/kontrollleuchte', 0.5, 0.5);
       lamp.width = lamp.height = 13;
@@ -358,7 +365,7 @@ export class MachineView extends Container {
     if (this.needle) this.needle.rotation = active ? -0.8 + Math.sin(this.t * 2.2) * 0.3 + rate * 0.12 : -1.3;
     if (this.pilot) this.pilot.alpha = active ? 0.7 + Math.sin(this.t * 6) * 0.3 : 0.45;
 
-    if (active) {
+    if (active && f.steam) {
       this.steamTimer -= dt * Math.max(0.6, rate);
       if (this.steamTimer <= 0) {
         this.steamTimer = 1.1;

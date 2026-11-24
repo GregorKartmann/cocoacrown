@@ -46,4 +46,8 @@ export const QUESTS: QuestDef[] = [
   { id: 'q-truffles', title: 'Das Kronjuwel', text: 'Baue die fünfte Etage: das Trüffel-Atelier.', target: 1, progress: (s) => (s.floors[4].unlocked ? 1 : 0), reward: 6000000, focus: 'f4' },
   { id: 'q-level-100', title: 'Meisterbetrieb', text: 'Bringe eine Etage auf Level 100. Die Maschine erreicht ihre höchste Ausbaustufe.', target: 100, progress: maxFloorLevel, reward: 50000000 },
   { id: 'q-prestige', title: 'Eine Krone für die Marke', text: 'Verkaufe deine Marke (Krone oben neben den Einstellungen). Du startest neu, behältst aber deine Manager und bekommst dauerhaft mehr Einkommen.', target: 1, progress: (s) => s.prestige.runs, reward: 250 },
+  { id: 'q-research', title: 'Im Rezeptlabor', text: 'Schließe eine Forschung im Rezeptlabor ab. Rezeptpunkte gibt es für Meilensteine, neue Etagen und Aufträge.', target: 1, progress: (s) => Object.values(s.research.ranks).reduce((a, b) => a + b, 0), reward: 5000 },
+  { id: 'q-nougat', title: 'Das Oberhaus', text: 'Baue die sechste Etage: die Nougat-Werkstatt. Aufzug und Lieferwagen werden dabei größer.', target: 1, progress: (s) => (s.floors[5].unlocked ? 1 : 0), reward: 2e8, focus: 'f5' },
+  { id: 'q-ruby', title: 'Rosa Wunder', text: 'Baue die siebte Etage: den Ruby-Temperierraum.', target: 1, progress: (s) => (s.floors[6].unlocked ? 1 : 0), reward: 6e9, focus: 'f6' },
+  { id: 'q-signature', title: 'Mit Brief und Siegel', text: 'Baue die achte Etage: das Geschenkbox-Atelier mit dem Kronensiegel.', target: 1, progress: (s) => (s.floors[7].unlocked ? 1 : 0), reward: 2e11, focus: 'f7' },
 ];

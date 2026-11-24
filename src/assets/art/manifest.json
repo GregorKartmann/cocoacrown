@@ -27,13 +27,25 @@
   "h": 220,
   "w": 212
  },
+ "effekte/haselnuss_wurf": {
+  "h": 216,
+  "w": 220
+ },
  "effekte/kontaktschatten": {
   "h": 68,
+  "w": 220
+ },
+ "effekte/ruby_spritzer": {
+  "h": 188,
   "w": 220
  },
  "effekte/schokospritzer": {
   "h": 215,
   "w": 220
+ },
+ "effekte/siegel_glanz": {
+  "h": 220,
+  "w": 207
  },
  "figuren/arbeiter_schaufel": {
   "h": 220,
@@ -95,6 +107,110 @@
   "h": 220,
   "w": 117
  },
+ "forschung/forschungsmarke": {
+  "h": 220,
+  "w": 214
+ },
+ "forschung/labor": {
+  "h": 675,
+  "w": 1200
+ },
+ "forschung/labortisch": {
+  "h": 220,
+  "w": 213
+ },
+ "forschung/rahmen/abgeschlossen": {
+  "h": 260,
+  "w": 257
+ },
+ "forschung/rahmen/aktiv": {
+  "h": 260,
+  "w": 255
+ },
+ "forschung/rahmen/ausgewaehlt": {
+  "h": 260,
+  "w": 260
+ },
+ "forschung/rahmen/gesperrt": {
+  "h": 260,
+  "w": 254
+ },
+ "forschung/rahmen/maximal": {
+  "h": 260,
+  "w": 258
+ },
+ "forschung/rahmen/verfuegbar": {
+  "h": 260,
+  "w": 254
+ },
+ "forschung/rezeptbuch": {
+  "h": 220,
+  "w": 184
+ },
+ "forschung/symbole/chargengroesse": {
+  "h": 164,
+  "w": 152
+ },
+ "forschung/symbole/lagerkapazitaet": {
+  "h": 164,
+  "w": 149
+ },
+ "forschung/symbole/lieferflotte": {
+  "h": 112,
+  "w": 164
+ },
+ "forschung/symbole/logistik": {
+  "h": 164,
+  "w": 123
+ },
+ "forschung/symbole/markensiegel": {
+  "h": 159,
+  "w": 164
+ },
+ "forschung/symbole/meisterrezept": {
+  "h": 164,
+  "w": 149
+ },
+ "forschung/symbole/premiumsortiment": {
+  "h": 164,
+  "w": 151
+ },
+ "forschung/symbole/produktion": {
+  "h": 164,
+  "w": 162
+ },
+ "forschung/symbole/qualitaetskontrolle": {
+  "h": 162,
+  "w": 164
+ },
+ "forschung/symbole/rezepte": {
+  "h": 164,
+  "w": 153
+ },
+ "forschung/symbole/rezeptentwicklung": {
+  "h": 164,
+  "w": 130
+ },
+ "forschung/symbole/routenplanung": {
+  "h": 164,
+  "w": 156
+ },
+ "forschung/symbole/schnellere_zyklen": {
+  "h": 164,
+  "w": 162
+ },
+ "forschung/symbole/verkaufsstellen": {
+  "h": 162,
+  "w": 164
+ },
+ "forschung/symbole/vertrieb": {
+  "h": 164,
+  "w": 163
+ },
+ "forschung/symbole/waermefuehrung": {
+  "h": 164,
+  "w": 158
+ },
  "gebaeude/aufzugsschacht": {
   "h": 396,
   "w": 220
@@ -111,11 +227,23 @@
   "h": 515,
   "w": 450
  },
+ "hintergruende/etage_geschenkbox": {
+  "h": 512,
+  "w": 1024
+ },
+ "hintergruende/etage_nougat": {
+  "h": 512,
+  "w": 1024
+ },
  "hintergruende/etage_pralinen": {
   "h": 512,
   "w": 1024
  },
  "hintergruende/etage_roesterei": {
+  "h": 512,
+  "w": 1024
+ },
+ "hintergruende/etage_ruby": {
   "h": 512,
   "w": 1024
  },
@@ -171,9 +299,21 @@
   "h": 373,
   "w": 420
  },
+ "maschinen/geschenkbox_presse": {
+  "h": 235,
+  "w": 420
+ },
  "maschinen/giessanlage": {
   "h": 420,
   "w": 393
+ },
+ "maschinen/nougat_melangeur": {
+  "h": 326,
+  "w": 420
+ },
+ "maschinen/ruby_temperieranlage": {
+  "h": 398,
+  "w": 420
  },
  "maschinen/trommelroester": {
   "h": 420,
@@ -197,6 +337,10 @@
  },
  "maschinen/upgrades/kronenplakette": {
   "h": 113,
+  "w": 160
+ },
+ "maschinen/upgrades/kronensiegel": {
+  "h": 160,
   "w": 160
  },
  "maschinen/upgrades/zeiger": {
@@ -327,6 +471,10 @@
   "h": 160,
   "w": 142
  },
+ "produkte/haselnuss_nougat": {
+  "h": 147,
+  "w": 160
+ },
  "produkte/kakaofrucht": {
   "h": 160,
   "w": 146
@@ -347,9 +495,17 @@
   "h": 160,
   "w": 138
  },
+ "produkte/ruby_tafel": {
+  "h": 155,
+  "w": 160
+ },
  "produkte/schokoladentafel": {
   "h": 160,
   "w": 129
+ },
+ "produkte/signature_box": {
+  "h": 160,
+  "w": 160
  },
  "produkte/trinkkakao": {
   "h": 139,
@@ -358,6 +514,14 @@
  "produkte/trueffel": {
   "h": 160,
   "w": 157
+ },
+ "requisiten/geschenkbox_wagen": {
+  "h": 245,
+  "w": 260
+ },
+ "requisiten/haselnusskiste": {
+  "h": 217,
+  "w": 260
  },
  "requisiten/kakao_regal": {
   "h": 259,
@@ -377,6 +541,10 @@
  },
  "requisiten/roesterei_saecke": {
   "h": 253,
+  "w": 260
+ },
+ "requisiten/ruby_regal": {
+  "h": 229,
   "w": 260
  },
  "requisiten/tafeln_tisch": {

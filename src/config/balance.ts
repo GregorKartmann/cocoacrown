@@ -33,6 +33,11 @@ export interface FloorDef {
   unlockCost: number;
   /** Cost of the upgrade from level 1 to 2. */
   baseCost: number;
+  /**
+   * Floors 6–8 come with a bigger lift cabin and bigger vans: lift and van
+   * capacity are multiplied by this once the floor stands (the "Oberhaus").
+   */
+  logistics?: number;
   costGrowth: number;
 }
 
@@ -73,6 +78,9 @@ export const BALANCE = {
     { id: 'bars', product: 'Schokoladentafel', productPlural: 'Schokoladentafeln', machine: 'Gießanlage', unitValue: 500, baseUnits: 3, baseCycle: 5, unlockCost: 250000, baseCost: 100000, costGrowth: 1.15 },
     { id: 'pralines', product: 'Pralinenschachtel', productPlural: 'Pralinenschachteln', machine: 'Überziehmaschine', unitValue: 10000, baseUnits: 3, baseCycle: 6, unlockCost: 5000000, baseCost: 2000000, costGrowth: 1.15 },
     { id: 'truffles', product: 'Trüffelbox', productPlural: 'Trüffelboxen', machine: 'Trüffel-Atelier', unitValue: 200000, baseUnits: 3, baseCycle: 8, unlockCost: 100000000, baseCost: 40000000, costGrowth: 1.15 },
+    { id: 'nougat', product: 'Haselnuss-Nougat', productPlural: 'Haselnuss-Nougats', machine: 'Nougat-Mélangeur', unitValue: 4e6, baseUnits: 3, baseCycle: 9, unlockCost: 1e9, baseCost: 3e8, costGrowth: 1.15, logistics: 3 },
+    { id: 'ruby', product: 'Ruby-Tafel', productPlural: 'Ruby-Tafeln', machine: 'Ruby-Temperieranlage', unitValue: 8e7, baseUnits: 3, baseCycle: 10, unlockCost: 3e10, baseCost: 8e9, costGrowth: 1.15, logistics: 3 },
+    { id: 'signature', product: 'Signature-Box', productPlural: 'Signature-Boxen', machine: 'Geschenkbox-Presse', unitValue: 1.6e9, baseUnits: 3, baseCycle: 12, unlockCost: 1e12, baseCost: 3e11, costGrowth: 1.15, logistics: 3 },
   ],
 
   floorMilestones: [

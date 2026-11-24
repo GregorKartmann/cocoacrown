@@ -9,7 +9,7 @@ import { useGameVersion, useStore } from '../useGame';
 import { Sheet } from './Hud';
 import { IconManager, Portrait } from '../icons';
 
-const FLOOR_NAMES = ['Röstnibs', 'Trinkkakao', 'Tafeln', 'Pralinen', 'Trüffel'];
+const FLOOR_NAMES = ['Röstnibs', 'Trinkkakao', 'Tafeln', 'Pralinen', 'Trüffel', 'Nougat', 'Ruby', 'Signature-Box'];
 
 export function stationName(id: StationId): string {
   if (id === 'lift') return 'Aufzug';

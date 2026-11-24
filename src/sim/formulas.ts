@@ -1,5 +1,6 @@
 import { BALANCE, type Milestone, type LogisticsMilestone } from '../config/balance';
 import { D, Decimal } from '../core/num';
+import { R } from './research';
 import type { GameState, Manager, ManagerBonus, StationId } from './types';
 
 /* ------------------------------------------------------------------------- */
@@ -92,7 +93,9 @@ export function boostFactor(s: GameState, kind: 'rush' | 'express'): number {
 /* Floors                                                                     */
 /* ------------------------------------------------------------------------- */
 
-export const FLOOR_IDS = ['f0', 'f1', 'f2', 'f3', 'f4'] as const;
+export const FLOOR_IDS = ['f0', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7'] as const;
+/** The 5th floor gates the brand sale (prestige) and is the pacing reference. */
+export const PRESTIGE_FLOOR = 4;
 
 export function floorIndex(id: StationId): number {
   return Number(id.slice(1));
@@ -119,8 +122,8 @@ export function floorStatsAt(s: GameState, i: number, level: number, permanentOn
   const def = BALANCE.floors[i];
   const ms = floorMilestoneFactors(level);
   const m = managerOf(s, floorId(i));
-  const speed = ms.speed * managerFactor(m, 'speed', permanentOnly) * (permanentOnly ? 1 : boostFactor(s, 'rush'));
-  let yieldF = ms.yield * managerFactor(m, 'yield', permanentOnly);
+  const speed = ms.speed * managerFactor(m, 'speed', permanentOnly) * R.floorSpeed(s) * (permanentOnly ? 1 : boostFactor(s, 'rush'));
+  let yieldF = ms.yield * managerFactor(m, 'yield', permanentOnly) * R.floorYield(s);
   let cycle = def.baseCycle / speed;
   if (cycle < BALANCE.floor.minCycle) {
     // Faster than the machine can run visually: convert the surplus into yield.
@@ -128,11 +131,11 @@ export function floorStatsAt(s: GameState, i: number, level: number, permanentOn
     cycle = BALANCE.floor.minCycle;
   }
   const unitsPerCycle = D(def.baseUnits).mul(level).mul(yieldF);
-  const batch = unitsPerCycle.mul(def.unitValue);
+  const batch = unitsPerCycle.mul(def.unitValue).mul(R.premium(s, i));
   const rate = batch.div(cycle);
   // Storage is sized from permanent values only so temporary boosts never shrink it later.
   let bufferCap: Decimal;
-  if (permanentOnly) bufferCap = batch.mul(BALANCE.floor.bufferBatches);
+  if (permanentOnly) bufferCap = batch.mul(BALANCE.floor.bufferBatches).mul(R.buffer(s));
   else bufferCap = floorStatsAt(s, i, level, true).bufferCap;
   return { level, cycle, unitsPerCycle, batch, rate, bufferCap, workers: ms.workers, tier: ms.tier, speedFactor: speed, yieldFactor: yieldF };
 }
@@ -145,6 +148,16 @@ export function unlockedFloorCount(s: GameState): number {
   let n = 0;
   for (const f of s.floors) if (f.unlocked) n++;
   return n;
+}
+
+/** Capacity multiplier for lift and vans from the floors 6–8 that stand (bigger cabin, bigger vans). */
+export function oberhausFactor(s: GameState): number {
+  let f = 1;
+  for (let i = 0; i < s.floors.length; i++) {
+    const boost = (BALANCE.floors[i] as { logistics?: number }).logistics;
+    if (boost && s.floors[i].unlocked) f *= boost;
+  }
+  return f;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -168,9 +181,10 @@ export function liftStatsAt(s: GameState, level: number): LiftStats {
   const cfg = BALANCE.lift;
   const ms = logisticsMilestoneFactors(level, cfg.milestones);
   const m = managerOf(s, 'lift');
-  const speed = ms.speed * managerFactor(m, 'speed') * boostFactor(s, 'express');
-  const capacity = D(cfg.baseCapacity).mul(level).mul(ms.capacity).mul(managerFactor(m, 'capacity'));
-  const permanentCap = D(cfg.baseCapacity).mul(level).mul(ms.capacity).mul(managerFactor(m, 'capacity', true));
+  const speed = ms.speed * managerFactor(m, 'speed') * R.logisticsSpeed(s) * boostFactor(s, 'express');
+  const oh = oberhausFactor(s);
+  const capacity = D(cfg.baseCapacity).mul(level).mul(ms.capacity).mul(managerFactor(m, 'capacity')).mul(oh);
+  const permanentCap = D(cfg.baseCapacity).mul(level).mul(ms.capacity).mul(managerFactor(m, 'capacity', true)).mul(oh);
   const floorTime = cfg.floorTravel / speed;
   const dwell = cfg.dwell / speed;
   const unload = cfg.unload / speed;
@@ -214,9 +228,9 @@ export function shipStatsAt(s: GameState, level: number): ShipStats {
   const cfg = BALANCE.shipping;
   const ms = logisticsMilestoneFactors(level, cfg.milestones);
   const m = managerOf(s, 'ship');
-  const speed = ms.speed * managerFactor(m, 'speed') * boostFactor(s, 'express');
+  const speed = ms.speed * managerFactor(m, 'speed') * R.logisticsSpeed(s) * boostFactor(s, 'express');
   const vans = Math.min(cfg.maxVans, ms.vehicles);
-  const capacity = D(cfg.baseCapacity).mul(level).mul(ms.capacity).mul(managerFactor(m, 'capacity'));
+  const capacity = D(cfg.baseCapacity).mul(level).mul(ms.capacity).mul(managerFactor(m, 'capacity')).mul(R.shipCapacity(s)).mul(oberhausFactor(s));
   const roundTrip = cfg.roundTrip / speed;
   return {
     level,
@@ -225,7 +239,7 @@ export function shipStatsAt(s: GameState, level: number): ShipStats {
     perVan: capacity.div(vans),
     roundTrip,
     dispatchInterval: roundTrip / vans,
-    priceFactor: managerFactor(m, 'price') * crownFactor(s),
+    priceFactor: managerFactor(m, 'price') * crownFactor(s) * R.price(s),
     rate: capacity.div(roundTrip),
     speedFactor: speed,
   };
@@ -240,12 +254,16 @@ export function shipStats(s: GameState): ShipStats {
 /* ------------------------------------------------------------------------- */
 
 /** Permanent income multiplier from crowns (applied to the sale price). */
-export function crownFactor(s: GameState): number {
-  return 1 + BALANCE.prestige.perCrown * s.prestige.crowns;
+export function perCrown(s: GameState): number {
+  return BALANCE.prestige.perCrown + R.perCrownBonus(s);
 }
 
-export function crownFactorFor(crowns: number): number {
-  return 1 + BALANCE.prestige.perCrown * crowns;
+export function crownFactor(s: GameState): number {
+  return 1 + perCrown(s) * s.prestige.crowns;
+}
+
+export function crownFactorFor(crowns: number, s?: GameState): number {
+  return 1 + (s ? perCrown(s) : BALANCE.prestige.perCrown) * crowns;
 }
 
 /** Crowns earned in total so far by lifetime earnings (owned + claimable). */
@@ -254,8 +272,17 @@ export function crownsByEarnings(lifetime: Decimal): number {
   return Math.floor(lifetime.div(BALANCE.prestige.divisor).sqrt().toNumber() + 1e-9);
 }
 
+/** Number of milestone levels in (before, after] for a station – each is worth a Rezeptpunkt. */
+export function milestonesCrossed(station: StationId, before: number, after: number): number {
+  const list: readonly { level: number }[] = station === 'lift' ? BALANCE.lift.milestones : station === 'ship' ? BALANCE.shipping.milestones : BALANCE.floorMilestones;
+  let n = 0;
+  for (const m of list) if (m.level > before && m.level <= after) n++;
+  return n;
+}
+
 /** The brand can be sold once the 5th floor was built at least once. */
 export function prestigeUnlocked(s: GameState): boolean {
+  // the 5th floor (index PRESTIGE_FLOOR) has to have been built once
   return s.prestige.runs > 0 || s.prestige.bestFloor5 !== null;
 }
 
@@ -335,7 +362,8 @@ export function stationLevel(s: GameState, station: StationId): number {
 
 /** Multiplier on upgrade prices (manager "Sparfuchs" and its skill). */
 export function costFactor(s: GameState, station: StationId): number {
-  return managerFactor(managerOf(s, station), 'cost');
+  const research = station.startsWith('f') ? R.floorCost(s) : 1;
+  return managerFactor(managerOf(s, station), 'cost') * research;
 }
 
 /** Price of the single upgrade from `level` to `level + 1`. */

@@ -129,3 +129,30 @@ test('Marke verkaufen: Kronen, Neustart, Manager bleiben, Stand übersteht Neula
   expect(crowns).toBe(6);
   expect(errors).toEqual([]);
 });
+
+test('Rezeptlabor: öffnet mit der 3. Etage, Forschung starten kostet Punkte', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await open(page);
+  await page.getByTestId('nav-research').click();
+  await expect(page.getByTestId('research-sheet')).toHaveCount(0); // still closed: only a hint
+  await page.evaluate(() => {
+    const cc = (window as unknown as { __cc: { store: any; give(v: number): void } }).__cc; // eslint-disable-line @typescript-eslint/no-explicit-any
+    cc.give(1e7);
+    cc.store.unlock(1);
+    cc.store.unlock(2);
+  });
+  await page.getByTestId('nav-research').click();
+  await expect(page.getByTestId('research-sheet')).toBeVisible();
+  await expect(page.getByTestId('research-points')).toContainText('2');
+  await page.waitForTimeout(400);
+  await page.getByTestId('node-schnellere_zyklen').click();
+  await page.getByTestId('research-start').click();
+  await expect(page.getByTestId('research-start')).toContainText('In Arbeit');
+  const r = await page.evaluate(() => {
+    const s = (window as unknown as { __cc: { store: { state: any } } }).__cc.store.state; // eslint-disable-line @typescript-eslint/no-explicit-any
+    return { points: s.research.points, active: s.research.active?.id };
+  });
+  expect(r).toEqual({ points: 1, active: 'schnellere_zyklen' });
+  expect(errors).toEqual([]);
+});

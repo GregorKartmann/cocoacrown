@@ -3,6 +3,8 @@ import { deser, ser } from '../core/num';
 import { SAVE_VERSION, defaultSettings } from '../sim/init';
 import type { BuyMode, GameState, LiftPhase, Manager, ManagerBonus, ManagerCategory, StationId, VanPhase } from '../sim/types';
 import { migrate } from './migrations';
+import { RESEARCH_BY_ID, RESEARCH_IDS, type ResearchId } from '../config/research';
+import { defaultResearch } from '../sim/research';
 
 export const SAVE_FORMAT = 'cocoa-crown-save';
 
@@ -36,6 +38,7 @@ export function toPlain(s: GameState): Record<string, unknown> {
     boosts: s.boosts.map((b) => ({ ...b })),
     golden: { ...s.golden, active: s.golden.active ? { ...s.golden.active } : null },
     prestige: { ...s.prestige, runStartEarned: ser(s.prestige.runStartEarned) },
+    research: { ...s.research, ranks: { ...s.research.ranks }, active: s.research.active ? { ...s.research.active } : null },
   };
 }
 
@@ -106,7 +109,7 @@ function oneOf<T extends string>(v: unknown, allowed: readonly T[], what: string
   return v as T;
 }
 
-const STATIONS: StationId[] = ['f0', 'f1', 'f2', 'f3', 'f4', 'lift', 'ship'];
+const STATIONS: StationId[] = ['f0', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'lift', 'ship'];
 const CATEGORIES: ManagerCategory[] = ['floor', 'lift', 'ship'];
 const BONUSES: ManagerBonus[] = ['speed', 'yield', 'cost', 'capacity', 'price'];
 const LIFT_PHASES: LiftPhase[] = ['idle', 'up', 'stop', 'down', 'unload'];
@@ -183,6 +186,11 @@ export function fromPlain(o: Obj): GameState {
   const stats = obj(o.stats, 'stats');
   const golden = obj(o.golden, 'golden');
   const prestige = obj(o.prestige, 'prestige');
+  const research = obj(o.research ?? {}, 'research');
+  const ranksRaw = obj(research.ranks ?? {}, 'research.ranks');
+  const ranks = defaultResearch().ranks;
+  for (const id of RESEARCH_IDS) ranks[id] = ranksRaw[id] === undefined ? 0 : int(ranksRaw[id], `research.${id}`, 0, RESEARCH_BY_ID[id].maxRank);
+  const activeRaw = research.active === null || research.active === undefined ? null : obj(research.active, 'research.active');
   const goldenActive = golden.active === null || golden.active === undefined ? null : obj(golden.active, 'golden.active');
   const settings = obj(o.settings ?? defaultSettings(), 'settings');
   const def = defaultSettings();
@@ -232,6 +240,20 @@ export function fromPlain(o: Obj): GameState {
       runStartEarned: dec(prestige.runStartEarned, 'prestige.runStartEarned'),
       runStartPlay: num(prestige.runStartPlay, 'prestige.runStartPlay', 0),
       bestFloor5: prestige.bestFloor5 === null || prestige.bestFloor5 === undefined ? null : num(prestige.bestFloor5, 'prestige.bestFloor5', 0),
+    },
+    research: {
+      points: int(research.points ?? 0, 'research.points', 0, Number.MAX_SAFE_INTEGER),
+      earned: int(research.earned ?? 0, 'research.earned', 0, Number.MAX_SAFE_INTEGER),
+      ranks,
+      active:
+        activeRaw && RESEARCH_IDS.includes(activeRaw.id as ResearchId) && ranks[activeRaw.id as ResearchId] < RESEARCH_BY_ID[activeRaw.id as ResearchId].maxRank
+          ? {
+              id: activeRaw.id as ResearchId,
+              remaining: num(activeRaw.remaining, 'research.remaining', 0, 1e7),
+              total: num(activeRaw.total, 'research.total', 1, 1e7),
+            }
+          : null,
+      open: typeof research.open === 'boolean' ? research.open : false,
     },
     rng: int(o.rng, 'rng', 0, 4294967295) >>> 0,
     settings: {

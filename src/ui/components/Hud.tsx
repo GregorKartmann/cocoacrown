@@ -1,11 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { BALANCE } from '../../config/balance';
 import { formatDuration, formatMoney, formatNumber, formatRate } from '../../core/format';
 import { currentQuest } from '../../sim/actions';
 import { crownsAvailable, prestigeUnlocked } from '../../sim/formulas';
+import { RESEARCH, RESEARCH_BY_ID, type ResearchId } from '../../config/research';
+import { R, whyNot } from '../../sim/research';
 import type { StationId } from '../../sim/types';
 import { useGameVersion, useStore } from '../useGame';
-import { IconBolt, IconBox, IconClose, IconCoin, IconCrown, IconFactory, IconGear, IconGift, IconLift, IconManager, IconQuest, IconStats, IconTruck, IconWatch } from '../icons';
+import { IconBolt, IconBox, IconClose, IconCoin, IconCrown, IconFactory, IconGear, IconGift, IconLab, IconLift, IconManager, IconQuest, IconStats, IconTruck, IconWatch } from '../icons';
 
 /* ------------------------------------------------------------------ */
 
@@ -180,13 +181,14 @@ export function QuestCard({ onFocus, onClaim }: { onFocus: (id: StationId) => vo
 
 /* ------------------------------------------------------------------ */
 
-export function BottomNav({ onOpen, refEl }: { onOpen: (what: 'overview' | 'managers' | 'quests' | 'stats') => void; refEl: React.Ref<HTMLDivElement> }) {
+export function BottomNav({ onOpen, refEl }: { onOpen: (what: 'overview' | 'managers' | 'quests' | 'research' | 'stats') => void; refEl: React.Ref<HTMLDivElement> }) {
   useGameVersion();
   const store = useStore();
   const s = store.state;
   const readySkill = s.managers.some((m) => m.assignedTo && m.skillCooldown <= 0 && m.skillActive <= 0);
   const unmanaged = s.floors.some((f) => f.unlocked && !f.managerId) || !s.lift.managerId || !s.ship.managerId;
   const q = currentQuest(s);
+  const labIdle = s.research.open && !s.research.active && RESEARCH.some((n) => whyNot(s, n.id) === null);
   return (
     <nav className="nav panel" ref={refEl}>
       <button onClick={() => onOpen('overview')} data-testid="nav-overview">
@@ -202,6 +204,11 @@ export function BottomNav({ onOpen, refEl }: { onOpen: (what: 'overview' | 'mana
         <IconQuest size={30} />
         Aufträge
         {q?.done && <span className="dot" />}
+      </button>
+      <button onClick={() => onOpen('research')} data-testid="nav-research" className={s.research.open ? '' : 'locked'}>
+        <IconLab size={30} />
+        Labor
+        {labIdle && <span className="dot" />}
       </button>
       <button onClick={() => onOpen('stats')}>
         <IconStats size={30} />
@@ -251,12 +258,13 @@ export function OfflineDialog({ onCollect }: { onCollect: () => void }) {
         <h2>Deine Manufaktur hat weitergearbeitet</h2>
         <p>
           Du warst {formatDuration(r.awaySeconds)} weg
-          {r.capped ? ` – angerechnet werden höchstens ${formatDuration(BALANCE.offline.maxSeconds)}` : ''}.
+          {r.capped ? ` – angerechnet werden höchstens ${formatDuration(R.offlineSeconds(store.state))}` : ''}.
         </p>
         <div className="big-amount">
           <IconCoin size={38} /> {formatMoney(r.earned, n)}
         </div>
         <p>Produzierte Ware im Wert von {formatMoney(r.produced, n)}.</p>
+        {r.researchDone.length > 0 && <p>Im Rezeptlabor fertig geworden: {r.researchDone.map((id) => RESEARCH_BY_ID[id as ResearchId]?.name ?? id).join(', ')}.</p>}
         {worstFloor.v > 0.25 && (
           <p>
             Engpass: {stageName}. Etage {worstFloor.i + 1} war {Math.round(worstFloor.v * 100)} % der Zeit voll – hier lohnt sich jetzt ein Upgrade.

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { canVibrate, isIos } from '../../audio/audio';
-import { BALANCE } from '../../config/balance';
+import { RESEARCH } from '../../config/research';
+import { R } from '../../sim/research';
 import { QUESTS } from '../../config/quests';
 import { formatDuration, formatMoney, formatMultiplier, formatNumber, formatRate } from '../../core/format';
 import { quoteUpgrade } from '../../sim/actions';
@@ -116,6 +117,8 @@ export function StatsSheet({ onClose, onPrestige }: { onClose: () => void; onPre
     ['Kronen', `${formatNumber(s.prestige.crowns, n, 0)} (Einkommen ${formatMultiplier(crownFactor(s))})`],
     ['Marke verkauft', `${formatNumber(s.prestige.runs, n, 0)}×`],
     ['Schnellster Weg zur 5. Etage', s.prestige.bestFloor5 === null ? '–' : formatDuration(s.prestige.bestFloor5)],
+    ['Rezeptpunkte verdient', formatNumber(s.research.earned, n, 0)],
+    ['Forschungsränge', `${formatNumber(Object.values(s.research.ranks).reduce((a, b) => a + b, 0), n, 0)} von ${RESEARCH.reduce((a, x) => a + x.maxRank, 0)}`],
     ['Dieser Durchlauf', `${formatDuration(st.playSeconds - s.prestige.runStartPlay)} · ${formatMoney(st.totalEarned.sub(s.prestige.runStartEarned), n)}`],
   ];
   return (
@@ -279,7 +282,7 @@ export function SettingsSheet({ onClose, installPrompt, onInstall }: { onClose: 
         ))}
       </ul>
       <p className="flavor" style={{ marginTop: 10 }}>
-        Offline-Ertrag: bis zu {formatDuration(BALANCE.offline.maxSeconds)} pro Abwesenheit, mit derselben Simulation wie im laufenden Spiel.
+        Offline-Ertrag: bis zu {formatDuration(R.offlineSeconds(store.state))} pro Abwesenheit, mit derselben Simulation wie im laufenden Spiel.
       </p>
     </Sheet>
   );

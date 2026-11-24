@@ -17,6 +17,8 @@ import {
 } from '../src/sim/actions';
 import { analyzeFlow, floorStatsAt, floorUnlockCost, managerHireCost } from '../src/sim/formulas';
 import { createGame } from '../src/sim/init';
+import { RESEARCH, type ResearchId } from '../src/config/research';
+import { nextRank, startResearch, whyNot } from '../src/sim/research';
 import { step } from '../src/sim/sim';
 import type { GameState, StationId } from '../src/sim/types';
 
@@ -36,6 +38,8 @@ export interface BotOptions {
   initial?: GameState;
   /** Stop early once this returns true (t = seconds since this run started). */
   stopWhen?: (s: GameState, t: number) => boolean;
+  /** Use the Rezeptlabor (default true): always keep one research running, cheapest first. */
+  research?: boolean;
 }
 
 export interface BotEvent {
@@ -111,6 +115,21 @@ export function runBot(opts: BotOptions): BotResult {
     if (!s.lift.managerId && s.lift.phase === 'idle') tapStation(s, 'lift');
     if (!s.ship.managerId) tapStation(s, 'ship');
 
+    // Research: keep the lab busy with the cheapest available rank
+    if (opts.research !== false && s.research.open && !s.research.active) {
+      let pick: ResearchId | null = null;
+      let best = Infinity;
+      for (const n of RESEARCH) {
+        if (whyNot(s, n.id) !== null) continue;
+        const c = nextRank(s, n.id)!.cost;
+        if (c < best) {
+          best = c;
+          pick = n.id;
+        }
+      }
+      if (pick && startResearch(s, pick)) mark(`research:${pick}`, t);
+    }
+
     // Quests
     let q = currentQuest(s);
     while (q && q.done) {
@@ -172,8 +191,11 @@ export function runBot(opts: BotOptions): BotResult {
         continue;
       }
       if (lock !== null) {
-        // A new floor is valued at its own production (players love new floors).
-        const rate = floorStatsAt(s, lock, 1).rate;
+        // A new floor is valued at its own production (players love new floors),
+        // but only as far as lift and vans could carry it.
+        const fl = analyzeFlow(s);
+        const carry = Decimal.min(fl.lift, fl.ship).mul(1.5).sub(fl.production).max(Decimal.min(fl.lift, fl.ship).mul(0.25));
+        const rate = Decimal.min(floorStatsAt(s, lock, 1).rate, carry);
         opts2.push({ o: { kind: 'unlock', floor: lock }, gain: rate, cost: floorUnlockCost(lock) });
       }
       let best: (typeof opts2)[number] | null = null;

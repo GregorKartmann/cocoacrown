@@ -1,7 +1,8 @@
 import type { Decimal } from '../core/num';
+import type { ResearchId } from '../config/research';
 import type { Notation } from '../core/format';
 
-export type FloorStationId = 'f0' | 'f1' | 'f2' | 'f3' | 'f4';
+export type FloorStationId = 'f0' | 'f1' | 'f2' | 'f3' | 'f4' | 'f5' | 'f6' | 'f7';
 export type StationId = FloorStationId | 'lift' | 'ship';
 export type ManagerCategory = 'floor' | 'lift' | 'ship';
 export type ManagerBonus = 'speed' | 'yield' | 'cost' | 'capacity' | 'price';
@@ -125,6 +126,18 @@ export interface PrestigeState {
   bestFloor5: number | null;
 }
 
+export interface ResearchState {
+  /** Unspent Rezeptpunkte. */
+  points: number;
+  /** Rezeptpunkte earned in total (statistics). */
+  earned: number;
+  ranks: Record<ResearchId, number>;
+  /** The one research in progress (seconds left of its total). */
+  active: { id: ResearchId; remaining: number; total: number } | null;
+  /** The lab opened (3rd floor built once); stays open after a brand sale. */
+  open: boolean;
+}
+
 export interface Settings {
   notation: Notation;
   sound: boolean;
@@ -152,6 +165,7 @@ export interface GameState {
   stats: Stats;
   quest: { index: number };
   prestige: PrestigeState;
+  research: ResearchState;
   rng: number;
   settings: Settings;
 }
@@ -159,6 +173,7 @@ export interface GameState {
 export type SimEvent =
   | { type: 'batch'; floor: number; value: Decimal }
   | { type: 'brandSold'; crowns: number }
+  | { type: 'researchDone'; id: ResearchId; rank: number }
   | { type: 'liftLoad'; floor: number; value: Decimal }
   | { type: 'liftUnload'; value: Decimal }
   | { type: 'vanDepart'; van: number; value: Decimal }
@@ -184,4 +199,5 @@ export interface OfflineAccumulator {
   liftBlockedSeconds: number;
   liftIdleSeconds: number;
   vansIdleSeconds: number;
+  researchDone: ResearchId[];
 }

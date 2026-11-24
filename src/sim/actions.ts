@@ -8,7 +8,9 @@ import {
   costFactor,
   costParams,
   crownsAvailable,
+  milestonesCrossed,
   floorIndex,
+  PRESTIGE_FLOOR,
   prestigeUnlocked,
   floorUnlockCost,
   liftStats,
@@ -19,6 +21,7 @@ import {
   stationLevel,
 } from './formulas';
 import { freshFloors, freshLift, freshShip } from './init';
+import { POINTS, R, addResearchPoints, checkLabOpen } from './research';
 import { scheduleGolden } from './sim';
 import { nextRandom, randomInt, weightedPick } from './rng';
 import type { BuyMode, GameState, Manager, ManagerCategory, SimContext, StationId } from './types';
@@ -59,9 +62,12 @@ export function buyUpgrade(s: GameState, station: StationId, mode: BuyMode): num
   if (!q.affordable || q.levels <= 0) return 0;
   s.money = s.money.sub(q.cost);
   if (s.money.lt(0)) s.money = D(0);
+  const before = stationLevel(s, station);
   if (station === 'lift') s.lift.level += q.levels;
   else if (station === 'ship') s.ship.level += q.levels;
   else s.floors[floorIndex(station)].level += q.levels;
+  // every milestone reached is worth a Rezeptpunkt (again in every run)
+  addResearchPoints(s, milestonesCrossed(station, before, before + q.levels) * POINTS.milestone);
   return q.levels;
 }
 
@@ -74,12 +80,14 @@ export function unlockFloor(s: GameState, i: number): boolean {
   s.money = s.money.sub(cost);
   f.unlocked = true;
   f.level = 1;
+  addResearchPoints(s, POINTS.floor);
+  checkLabOpen(s);
   // A manager who ran this floor before the last brand sale returns on their own.
   const station = `f${i}` as StationId;
   const back = s.managers.find((m) => m.home === station && !m.assignedTo);
   if (back) assignManager(s, back.id, station);
   for (const m of s.managers) if (m.home === station) m.home = null;
-  if (i === s.floors.length - 1) noteFloor5(s);
+  if (i === PRESTIGE_FLOOR) noteFloor5(s);
   return true;
 }
 
@@ -160,8 +168,8 @@ export function activateSkill(s: GameState, managerId: string): boolean {
   const m = s.managers.find((x) => x.id === managerId);
   if (!m || !m.assignedTo || m.skillCooldown > 0 || m.skillActive > 0) return false;
   const r = BALANCE.managers.rarities[m.rarity];
-  m.skillActive = r.duration;
-  m.skillCooldown = BALANCE.managers.skillCooldown;
+  m.skillActive = r.duration * R.skillDuration(s);
+  m.skillCooldown = BALANCE.managers.skillCooldown * R.skillCooldown(s);
   s.stats.skillsUsed += 1;
   return true;
 }
@@ -241,6 +249,7 @@ export function sellBrand(s: GameState): number {
   if (gained < 1 || !prestigeUnlocked(s)) return 0;
   s.prestige.crowns += gained;
   s.prestige.runs += 1;
+  addResearchPoints(s, POINTS.brandSale);
   s.prestige.runStartEarned = s.stats.totalEarned;
   s.prestige.runStartPlay = s.stats.playSeconds;
 
@@ -284,12 +293,13 @@ export function catchGolden(s: GameState): GoldenReward | null {
   const r = BALANCE.golden.rewards[idx];
   if (r.id === 'cash') {
     const cfg = r as { seconds: number; minimum: number };
-    const amount = dmax(analyzeFlow(s).income.mul(cfg.seconds), D(cfg.minimum));
+    const amount = dmax(analyzeFlow(s).income.mul(cfg.seconds), D(cfg.minimum)).mul(R.goldenReward(s));
     s.money = s.money.add(amount);
     s.stats.totalEarned = s.stats.totalEarned.add(amount);
     return { kind: 'cash', amount };
   }
-  const cfg = r as { factor: number; duration: number };
+  const base = r as { factor: number; duration: number };
+  const cfg = { factor: base.factor, duration: Math.round(base.duration * R.goldenReward(s)) };
   const kind = r.id === 'rush' ? 'rush' : 'express';
   const existing = s.boosts.find((b) => b.kind === kind);
   if (existing) {
@@ -316,6 +326,7 @@ export function claimQuest(s: GameState): number {
   s.money = s.money.add(q.def.reward);
   s.stats.totalEarned = s.stats.totalEarned.add(q.def.reward);
   s.quest.index += 1;
+  addResearchPoints(s, POINTS.quest);
   return q.def.reward;
 }
 

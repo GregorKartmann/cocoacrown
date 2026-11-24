@@ -3,18 +3,7 @@ import { BALANCE, type LogisticsMilestone, type Milestone } from '../../config/b
 import { BONUS_INFO, FLOOR_FLAVOR, bonusTitle } from '../../config/content';
 import { formatMoney, formatMultiplier, formatNumber, formatRate } from '../../core/format';
 import { quoteUpgrade } from '../../sim/actions';
-import {
-  analyzeFlow,
-  floorIndex,
-  floorStatsAt,
-  floorUnlockCost,
-  liftStatsAt,
-  managerOf,
-  nextFloorMilestone,
-  nextLogisticsMilestone,
-  previousMilestoneLevel,
-  shipStatsAt,
-} from '../../sim/formulas';
+import { analyzeFlow, floorIndex, floorStatsAt, floorUnlockCost, liftStatsAt, managerOf, nextFloorMilestone, nextLogisticsMilestone, previousMilestoneLevel, shipStatsAt, oberhausFactor } from '../../sim/formulas';
 import type { BuyMode, StationId } from '../../sim/types';
 import { useGameVersion, useStore } from '../useGame';
 import { Sheet } from './Hud';
@@ -75,6 +64,7 @@ export function StationSheet({ id, onClose, onManagers }: { id: StationId; onClo
       <>
         <Row k="Ladung pro Fahrt" now={formatMoney(a.capacity, n)} next={formatMoney(b.capacity, n)} />
         <Row k="Fahrzeit bis oben" now={`${formatNumber(a.tripTime, n, 1)} s`} next={`${formatNumber(b.tripTime, n, 1)} s`} />
+        {oberhausFactor(s) > 1 && <Row k="Oberhaus-Ausbau" now={formatMultiplier(oberhausFactor(s))} />}
         <Row k="Transportleistung" now={formatRate(a.rate, n)} next={formatRate(b.rate, n)} />
         <Row k="Versandlager" now={formatMoney(a.depotCap, n)} next={formatMoney(b.depotCap, n)} />
       </>
@@ -96,6 +86,7 @@ export function StationSheet({ id, onClose, onManagers }: { id: StationId; onClo
         <Row k="Rundfahrt" now={`${formatNumber(a.roundTrip, n, 1)} s`} next={`${formatNumber(b.roundTrip, n, 1)} s`} />
         <Row k="Verkaufsleistung" now={formatRate(a.rate, n)} next={formatRate(b.rate, n)} />
         {a.priceFactor !== 1 && <Row k="Verkaufspreis" now={formatMultiplier(a.priceFactor)} />}
+        {oberhausFactor(s) > 1 && <Row k="Oberhaus-Ausbau" now={formatMultiplier(oberhausFactor(s))} />}
       </>
     );
     ms = { next: nextLogisticsMilestone(level, BALANCE.shipping.milestones), prev: previousMilestoneLevel(level, BALANCE.shipping.milestones), kind: 'ship' };
@@ -209,7 +200,7 @@ export function UnlockSheet({ floor, onClose }: { floor: number; onClose: () => 
   const store = useStore();
   const s = store.state;
   const n = s.settings.notation;
-  const def = BALANCE.floors[floor];
+  const def = BALANCE.floors[floor] as (typeof BALANCE.floors)[number] & { logistics?: number };
   if (!def || s.floors[floor].unlocked) return null;
   const cost = floorUnlockCost(floor);
   const st = floorStatsAt(s, floor, 1);
@@ -225,9 +216,16 @@ export function UnlockSheet({ floor, onClose }: { floor: number; onClose: () => 
           <Row k="Zykluszeit" now={`${def.baseCycle} s`} />
         </tbody>
       </table>
-      <p className="flavor" style={{ marginTop: 10 }}>
-        Achtung: Jede neue Etage verlängert die Fahrt des Aufzugs. Behalte die Logistik im Blick.
-      </p>
+      {def.logistics ? (
+        <p className="flavor oberhaus" style={{ marginTop: 10 }}>
+          <b>Oberhaus-Ausbau:</b> Mit dieser Etage bekommen Aufzug und Lieferwagen größere Kabinen und Laderäume – ihre Kapazität steigt um ×{def.logistics}. Die
+          Fahrt des Aufzugs wird trotzdem etwas länger.
+        </p>
+      ) : (
+        <p className="flavor" style={{ marginTop: 10 }}>
+          Achtung: Jede neue Etage verlängert die Fahrt des Aufzugs. Behalte die Logistik im Blick.
+        </p>
+      )}
       <button
         className="btn gold block buy-btn"
         disabled={!can || !prevUnlocked}

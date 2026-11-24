@@ -1,6 +1,7 @@
 import { BALANCE } from '../config/balance';
 import { D, dmin } from '../core/num';
 import { floorStats, liftStats, shipStats, unlockedFloorCount } from './formulas';
+import { R, advanceResearch } from './research';
 import { nextRandom } from './rng';
 import type { GameState, SimContext } from './types';
 
@@ -27,6 +28,7 @@ export function step(s: GameState, dt: number, ctx: SimContext): void {
   shipAdvance(s, dt + payRush(s.ship, dt), ctx);
   if (!s.ship.vans.some((v) => v.phase !== 'dock')) s.ship.rush = 0;
   if (!ctx.offline) goldenAdvance(s, dt, ctx);
+  advanceResearch(s, dt, ctx);
 }
 
 /** Extra seconds a station runs this step from tap time it has earned (smooth, at most maxSpeed×). */
@@ -295,7 +297,7 @@ export function shipAdvance(s: GameState, dt: number, ctx: SimContext): void {
 
 export function scheduleGolden(s: GameState): void {
   const g = BALANCE.golden;
-  s.golden.nextIn = g.minInterval + nextRandom(s) * (g.maxInterval - g.minInterval);
+  s.golden.nextIn = (g.minInterval + nextRandom(s) * (g.maxInterval - g.minInterval)) * R.goldenInterval(s);
 }
 
 function goldenAdvance(s: GameState, dt: number, ctx: SimContext): void {

@@ -50,6 +50,9 @@ export const FLOOR_FLAVOR = [
   'Temperierte Schokolade fließt in Formen und wird zu Tafeln.',
   'Ein Schokoladenvorhang überzieht Füllungen zu Pralinen.',
   'Von Hand gerollte Trüffel mit Blattgold – das Kronjuwel.',
+  'Geröstete Haselnüsse werden zwischen Mühlsteinen zu cremigem Nougat gemahlen.',
+  'Im gekühlten Glasbehälter wird rosa Ruby-Schokolade exakt temperiert.',
+  'Die Prägepresse schließt jede Signature-Box mit dem Kronensiegel.',
 ];
 
 /* ------------------------------------------------------------------ */
@@ -77,4 +80,7 @@ export const FLOOR_ART = [
   { bg: 'hintergruende/etage_veredelung', floorLine: 446, machine: 'maschinen/giessanlage', prop: 'requisiten/tafeln_tisch', product: 'produkte/schokoladentafel', operator: 'figuren/chocolatiere' },
   { bg: 'hintergruende/etage_pralinen', floorLine: 450, machine: 'maschinen/ueberziehmaschine', prop: 'requisiten/pralinen_wagen', product: 'produkte/pralinen', operator: 'figuren/arbeiterin_sack' },
   { bg: 'hintergruende/etage_trueffel', floorLine: 458, machine: 'maschinen/trueffel_atelier', prop: 'requisiten/trueffel_kommode', product: 'produkte/trueffel', operator: 'figuren/meisterin' },
+  { bg: 'hintergruende/etage_nougat', floorLine: 442, machine: 'maschinen/nougat_melangeur', prop: 'requisiten/haselnusskiste', product: 'produkte/haselnuss_nougat', operator: 'figuren/arbeiterin_sack' },
+  { bg: 'hintergruende/etage_ruby', floorLine: 442, machine: 'maschinen/ruby_temperieranlage', prop: 'requisiten/ruby_regal', product: 'produkte/ruby_tafel', operator: 'figuren/chocolatiere' },
+  { bg: 'hintergruende/etage_geschenkbox', floorLine: 442, machine: 'maschinen/geschenkbox_presse', prop: 'requisiten/geschenkbox_wagen', product: 'produkte/signature_box', operator: 'figuren/managerin_versand' },
 ];

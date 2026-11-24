@@ -12,6 +12,8 @@ import { StationSheet, UnlockSheet } from './components/StationSheet';
 import { HireReveal, ManagerSheet, stationName } from './components/ManagerSheet';
 import { OverviewSheet, QuestsSheet, SettingsSheet, StatsSheet } from './components/MenuSheets';
 import { BrandSoldDialog, PrestigeSheet } from './components/PrestigeSheet';
+import { ResearchSheet } from './components/ResearchSheet';
+import { LAB_FLOOR, RESEARCH_BY_ID } from '../config/research';
 
 type SheetState =
   | { kind: 'station'; id: StationId }
@@ -21,6 +23,7 @@ type SheetState =
   | { kind: 'quests' }
   | { kind: 'stats' }
   | { kind: 'prestige' }
+  | { kind: 'research' }
   | { kind: 'settings' };
 
 interface BeforeInstallPromptEvent extends Event {
@@ -146,6 +149,15 @@ export function App({ store, updateAvailable, onUpdate }: { store: GameStore; up
           audio.play('skill');
           break;
         }
+        case 'researchDone':
+          audio.play('milestone');
+          haptic(hap, 30);
+          toast(`Forschung abgeschlossen: ${RESEARCH_BY_ID[e.id].name} (Rang ${e.rank})`, 'gold');
+          break;
+        case 'researchStarted':
+          audio.play('upgrade');
+          haptic(hap, 12);
+          break;
         case 'brandSold':
           audio.play('milestone');
           haptic(hap, 60);
@@ -237,7 +249,16 @@ export function App({ store, updateAvailable, onUpdate }: { store: GameStore; up
         <TopBar onSettings={() => setSheet({ kind: 'settings' })} onStation={openStation} onPrestige={() => setSheet({ kind: 'prestige' })} bump={bump} refEl={topRef} />
         <div className="bottom-ui" ref={bottomRef}>
           <QuestCard onFocus={(id) => worldRef.current?.focus(id)} onClaim={() => store.claimQuest()} />
-          <BottomNav onOpen={(w) => setSheet({ kind: w } as SheetState)} refEl={null} />
+          <BottomNav
+            onOpen={(w) => {
+              if (w === 'research' && !store.state.research.open) {
+                toast(`Das Rezeptlabor öffnet mit der ${LAB_FLOOR + 1}. Etage.`, 'info');
+                return;
+              }
+              setSheet({ kind: w } as SheetState);
+            }}
+            refEl={null}
+          />
         </div>
         <Toasts items={toasts} />
         {updateAvailable && (
@@ -258,6 +279,7 @@ export function App({ store, updateAvailable, onUpdate }: { store: GameStore; up
         {sheet?.kind === 'quests' && <QuestsSheet onClose={close} />}
         {sheet?.kind === 'stats' && <StatsSheet onClose={close} onPrestige={() => setSheet({ kind: 'prestige' })} />}
         {sheet?.kind === 'prestige' && <PrestigeSheet onClose={close} />}
+        {sheet?.kind === 'research' && <ResearchSheet onClose={close} />}
         {sheet?.kind === 'settings' && (
           <SettingsSheet
             onClose={close}

@@ -1,10 +1,14 @@
 import { BALANCE } from '../config/balance';
 import { D } from '../core/num';
+import { defaultResearch } from './research';
 import { randomSeed } from './rng';
 import type { FloorState, GameState, LiftState, PrestigeState, Settings, ShipState } from './types';
 
-/** v2: prestige ("Marke verkaufen"), manager home stations, smooth tap time. */
-export const SAVE_VERSION = 2;
+/**
+ * v2: prestige ("Marke verkaufen"), manager home stations, smooth tap time.
+ * v3: floors 6–8, Rezeptlabor (research).
+ */
+export const SAVE_VERSION = 3;
 
 export function defaultSettings(): Settings {
   return { notation: 'short', sound: true, music: true, haptics: true, buyMode: 1 };
@@ -85,6 +89,7 @@ export function createGame(now = Date.now(), seed = randomSeed(), settings: Sett
     },
     quest: { index: 0 },
     prestige: defaultPrestige(),
+    research: defaultResearch(),
     rng: seed >>> 0,
     settings: { ...settings },
   };
