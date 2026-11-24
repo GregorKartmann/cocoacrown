@@ -1,5 +1,9 @@
 # Cocoa Crown – Idle-Schokoladen-Imperium
 
+**Spielen:** https://gregorkartmann.github.io/cocoacrown/ (auf dem iPhone in Safari öffnen, „Teilen“ → „Zum Home-Bildschirm“).
+
+Der Branch `gh-pages` enthält den fertigen Build (`npm run build` → `dist/`).
+
 Idle-Tycoon-Spiel als Webapp und installierbare PWA. Vertical Slice 0.3.0 mit gemaltem Asset-Pack: die Manufaktur mit fünf Produktionsetagen, Lastenaufzug, Lieferwagen, Managern, Aufträgen, Goldener Kakaobohne, Offline-Progression und lokalen Spielständen.
 
 ## Starten
