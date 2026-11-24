@@ -1,0 +1,398 @@
+{
+ "effekte/bohnenwurf": {
+  "h": 200,
+  "w": 220
+ },
+ "effekte/dampf_01": {
+  "h": 173,
+  "w": 95
+ },
+ "effekte/dampf_02": {
+  "h": 180,
+  "w": 220
+ },
+ "effekte/dampf_03": {
+  "h": 177,
+  "w": 220
+ },
+ "effekte/funken": {
+  "h": 171,
+  "w": 220
+ },
+ "effekte/glut": {
+  "h": 193,
+  "w": 220
+ },
+ "effekte/goldglanz": {
+  "h": 220,
+  "w": 212
+ },
+ "effekte/kontaktschatten": {
+  "h": 68,
+  "w": 220
+ },
+ "effekte/schokospritzer": {
+  "h": 215,
+  "w": 220
+ },
+ "figuren/arbeiter_schaufel": {
+  "h": 220,
+  "w": 140
+ },
+ "figuren/arbeiterin_sack": {
+  "h": 220,
+  "w": 116
+ },
+ "figuren/chocolatiere": {
+  "h": 220,
+  "w": 113
+ },
+ "figuren/fahrer": {
+  "h": 220,
+  "w": 117
+ },
+ "figuren/inhaber": {
+  "h": 220,
+  "w": 151
+ },
+ "figuren/laufposen/arbeiter_01": {
+  "h": 220,
+  "w": 169
+ },
+ "figuren/laufposen/arbeiter_02": {
+  "h": 220,
+  "w": 98
+ },
+ "figuren/laufposen/arbeiter_03": {
+  "h": 220,
+  "w": 155
+ },
+ "figuren/laufposen/arbeiterin_01": {
+  "h": 220,
+  "w": 157
+ },
+ "figuren/laufposen/arbeiterin_02": {
+  "h": 220,
+  "w": 93
+ },
+ "figuren/laufposen/arbeiterin_03": {
+  "h": 220,
+  "w": 143
+ },
+ "figuren/managerin_produktion": {
+  "h": 220,
+  "w": 98
+ },
+ "figuren/managerin_versand": {
+  "h": 220,
+  "w": 96
+ },
+ "figuren/meisterin": {
+  "h": 220,
+  "w": 99
+ },
+ "figuren/vorarbeiter": {
+  "h": 220,
+  "w": 117
+ },
+ "gebaeude/aufzugsschacht": {
+  "h": 396,
+  "w": 220
+ },
+ "gebaeude/baugeruest": {
+  "h": 338,
+  "w": 607
+ },
+ "gebaeude/fabrikdach": {
+  "h": 262,
+  "w": 633
+ },
+ "gebaeude/strassenmobiliar": {
+  "h": 515,
+  "w": 450
+ },
+ "hintergruende/etage_pralinen": {
+  "h": 512,
+  "w": 1024
+ },
+ "hintergruende/etage_roesterei": {
+  "h": 512,
+  "w": 1024
+ },
+ "hintergruende/etage_trinkkakao": {
+  "h": 512,
+  "w": 1024
+ },
+ "hintergruende/etage_trueffel": {
+  "h": 512,
+  "w": 1024
+ },
+ "hintergruende/etage_veredelung": {
+  "h": 512,
+  "w": 1024
+ },
+ "hintergruende/etage_versand": {
+  "h": 512,
+  "w": 1024
+ },
+ "hintergruende/fassade_alternativ": {
+  "h": 627,
+  "w": 627
+ },
+ "hintergruende/stadt_und_strasse": {
+  "h": 627,
+  "w": 627
+ },
+ "hintergruende/verladung_alternativ": {
+  "h": 627,
+  "w": 627
+ },
+ "hintergruende/werkstatt_alternativ": {
+  "h": 627,
+  "w": 627
+ },
+ "logistik/lastenaufzug": {
+  "h": 360,
+  "w": 248
+ },
+ "logistik/lieferwagen": {
+  "h": 208,
+  "w": 360
+ },
+ "logistik/versandkisten": {
+  "h": 360,
+  "w": 311
+ },
+ "logistik/winde": {
+  "h": 360,
+  "w": 333
+ },
+ "maschinen/conche": {
+  "h": 373,
+  "w": 420
+ },
+ "maschinen/giessanlage": {
+  "h": 420,
+  "w": 393
+ },
+ "maschinen/trommelroester": {
+  "h": 420,
+  "w": 358
+ },
+ "maschinen/trueffel_atelier": {
+  "h": 420,
+  "w": 389
+ },
+ "maschinen/ueberziehmaschine": {
+  "h": 420,
+  "w": 420
+ },
+ "maschinen/upgrades/druckmesser": {
+  "h": 160,
+  "w": 157
+ },
+ "maschinen/upgrades/kontrollleuchte": {
+  "h": 160,
+  "w": 153
+ },
+ "maschinen/upgrades/kronenplakette": {
+  "h": 113,
+  "w": 160
+ },
+ "maschinen/upgrades/zeiger": {
+  "h": 160,
+  "w": 38
+ },
+ "oberflaeche/auftraege": {
+  "h": 128,
+  "w": 105
+ },
+ "oberflaeche/belohnung": {
+  "h": 127,
+  "w": 128
+ },
+ "oberflaeche/bestaetigen": {
+  "h": 112,
+  "w": 128
+ },
+ "oberflaeche/boost": {
+  "h": 128,
+  "w": 93
+ },
+ "oberflaeche/button_bordeaux": {
+  "h": 191,
+  "w": 512
+ },
+ "oberflaeche/button_petrol": {
+  "h": 154,
+  "w": 512
+ },
+ "oberflaeche/dialog_elfenbein": {
+  "h": 405,
+  "w": 512
+ },
+ "oberflaeche/einstellungen": {
+  "h": 125,
+  "w": 128
+ },
+ "oberflaeche/engpass": {
+  "h": 117,
+  "w": 128
+ },
+ "oberflaeche/gesperrt": {
+  "h": 128,
+  "w": 101
+ },
+ "oberflaeche/hud_espresso": {
+  "h": 155,
+  "w": 512
+ },
+ "oberflaeche/krone": {
+  "h": 98,
+  "w": 128
+ },
+ "oberflaeche/manager": {
+  "h": 128,
+  "w": 121
+ },
+ "oberflaeche/muenze": {
+  "h": 128,
+  "w": 126
+ },
+ "oberflaeche/offline": {
+  "h": 128,
+  "w": 96
+ },
+ "oberflaeche/schliessen": {
+  "h": 128,
+  "w": 127
+ },
+ "oberflaeche/statistik": {
+  "h": 106,
+  "w": 128
+ },
+ "oberflaeche/ton": {
+  "h": 128,
+  "w": 127
+ },
+ "oberflaeche/upgrade": {
+  "h": 128,
+  "w": 111
+ },
+ "oberflaeche/werk": {
+  "h": 127,
+  "w": 128
+ },
+ "portraits/arbeiter_schaufel": {
+  "h": 192,
+  "w": 192
+ },
+ "portraits/arbeiterin_sack": {
+  "h": 192,
+  "w": 192
+ },
+ "portraits/chocolatiere": {
+  "h": 192,
+  "w": 192
+ },
+ "portraits/fahrer": {
+  "h": 192,
+  "w": 192
+ },
+ "portraits/herr_direktor": {
+  "h": 192,
+  "w": 192
+ },
+ "portraits/inhaber": {
+  "h": 192,
+  "w": 192
+ },
+ "portraits/managerin_produktion": {
+  "h": 192,
+  "w": 192
+ },
+ "portraits/managerin_versand": {
+  "h": 192,
+  "w": 192
+ },
+ "portraits/meisterin": {
+  "h": 192,
+  "w": 192
+ },
+ "portraits/vorarbeiter": {
+  "h": 192,
+  "w": 192
+ },
+ "produkte/goldene_kakaobohne": {
+  "h": 160,
+  "w": 142
+ },
+ "produkte/kakaofrucht": {
+  "h": 160,
+  "w": 146
+ },
+ "produkte/kakaosack": {
+  "h": 160,
+  "w": 154
+ },
+ "produkte/lieferpaket": {
+  "h": 146,
+  "w": 160
+ },
+ "produkte/pralinen": {
+  "h": 158,
+  "w": 160
+ },
+ "produkte/roestnibs": {
+  "h": 160,
+  "w": 138
+ },
+ "produkte/schokoladentafel": {
+  "h": 160,
+  "w": 129
+ },
+ "produkte/trinkkakao": {
+  "h": 139,
+  "w": 160
+ },
+ "produkte/trueffel": {
+  "h": 160,
+  "w": 157
+ },
+ "requisiten/kakao_regal": {
+  "h": 259,
+  "w": 260
+ },
+ "requisiten/kettenzug": {
+  "h": 260,
+  "w": 134
+ },
+ "requisiten/kronenschild": {
+  "h": 230,
+  "w": 260
+ },
+ "requisiten/pralinen_wagen": {
+  "h": 260,
+  "w": 240
+ },
+ "requisiten/roesterei_saecke": {
+  "h": 253,
+  "w": 260
+ },
+ "requisiten/tafeln_tisch": {
+  "h": 204,
+  "w": 260
+ },
+ "requisiten/trueffel_kommode": {
+  "h": 237,
+  "w": 260
+ },
+ "requisiten/wandleuchte": {
+  "h": 260,
+  "w": 241
+ },
+ "requisiten/wanduhr": {
+  "h": 260,
+  "w": 242
+ }
+}

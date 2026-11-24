@@ -1,0 +1,80 @@
+import type { ManagerBonus, ManagerCategory } from '../sim/types';
+
+/** Player-facing texts and names (German). Kept apart from numbers in balance.ts. */
+
+export const GAME_TITLE = 'Cocoa Crown';
+export const FACTORY_NAME = 'Manufaktur am Kakaokai';
+
+export const FIRST_NAMES = [
+  'Anna', 'Ben', 'Clara', 'Deniz', 'Emil', 'Frieda', 'Greta', 'Hannes', 'Ida', 'Jonas', 'Karla', 'Leon', 'Mila', 'Noah',
+  'Oskar', 'Paula', 'Rosa', 'Samir', 'Tilda', 'Umut', 'Vera', 'Willi', 'Yara', 'Zoe', 'Aylin', 'Bruno', 'Carlo', 'Elif',
+  'Finn', 'Hedi', 'Ilse', 'Jakob', 'Lotte', 'Mats', 'Nele', 'Ole', 'Pia', 'Rudi', 'Selma', 'Theo',
+];
+
+export const LAST_NAMES = [
+  'Bohnenberg', 'Conradi', 'Dattler', 'Eckhart', 'Fuchs', 'Görner', 'Haselmann', 'Imhof', 'Jäger', 'Kessler', 'Lindner',
+  'Mandel', 'Nussbaum', 'Ostermann', 'Pfeffer', 'Quandt', 'Rahm', 'Sahner', 'Teubner', 'Ullrich', 'Vogt', 'Walz',
+  'Zimt', 'Brandl', 'Krüger', 'Nowak', 'Yilmaz', 'Schubert', 'Weber', 'Kaya',
+];
+
+export const CATEGORY_NAMES: Record<ManagerCategory, string> = {
+  floor: 'Produktion',
+  lift: 'Aufzug',
+  ship: 'Versand',
+};
+
+export const BONUS_INFO: Record<ManagerBonus, { title: string; passive: string; active: string }> = {
+  speed: { title: 'Taktgeber', passive: 'schnellere Zyklen', active: 'Turbo-Takt' },
+  yield: { title: 'Mengenmeister', passive: 'mehr Ware pro Zyklus', active: 'Großcharge' },
+  cost: { title: 'Sparfuchs', passive: 'günstigere Upgrades', active: 'Rabattaktion' },
+  capacity: { title: 'Hebekünstler', passive: 'mehr Ladung pro Fahrt', active: 'Volle Ladung' },
+  price: { title: 'Verhandler', passive: 'höherer Verkaufspreis', active: 'Preisoffensive' },
+};
+
+/** Bonus title differs slightly by category for flavour. */
+export function bonusTitle(category: ManagerCategory, bonus: ManagerBonus): string {
+  if (bonus === 'speed' && category !== 'floor') return 'Schnellläufer';
+  if (bonus === 'capacity' && category === 'ship') return 'Disponent';
+  return BONUS_INFO[bonus].title;
+}
+
+export const CATEGORY_BONUSES: Record<ManagerCategory, ManagerBonus[]> = {
+  floor: ['speed', 'yield', 'cost'],
+  lift: ['capacity', 'speed', 'cost'],
+  ship: ['price', 'capacity', 'speed'],
+};
+
+export const FLOOR_FLAVOR = [
+  'Kakaobohnen werden im Trommelröster geröstet und zu Nibs gebrochen.',
+  'Die Conche rührt Kakao stundenlang zu feinstem Trinkkakao.',
+  'Temperierte Schokolade fließt in Formen und wird zu Tafeln.',
+  'Ein Schokoladenvorhang überzieht Füllungen zu Pralinen.',
+  'Von Hand gerollte Trüffel mit Blattgold – das Kronjuwel.',
+];
+
+/* ------------------------------------------------------------------ */
+/* Painted art mapping                                                 */
+/* ------------------------------------------------------------------ */
+
+const FEMALE = new Set(['Anna', 'Clara', 'Frieda', 'Greta', 'Ida', 'Karla', 'Mila', 'Paula', 'Rosa', 'Tilda', 'Vera', 'Yara', 'Zoe', 'Aylin', 'Elif', 'Hedi', 'Ilse', 'Lotte', 'Nele', 'Pia', 'Selma']);
+
+const FIGURES: Record<ManagerCategory, { f: string[]; m: string[] }> = {
+  floor: { f: ['managerin_produktion', 'meisterin', 'chocolatiere'], m: ['vorarbeiter', 'arbeiter_schaufel', 'herr_direktor'] },
+  lift: { f: ['arbeiterin_sack', 'managerin_produktion'], m: ['vorarbeiter', 'arbeiter_schaufel'] },
+  ship: { f: ['managerin_versand', 'managerin_produktion'], m: ['fahrer', 'inhaber', 'herr_direktor'] },
+};
+
+/** Painted portrait for a manager, chosen from category, the name's gender and the stored look. */
+export function portraitKey(name: string, category: ManagerCategory, variant: number): string {
+  const first = name.split(' ')[0];
+  const set = FIGURES[category][FEMALE.has(first) ? 'f' : 'm'];
+  return `portraits/${set[Math.abs(variant) % set.length]}`;
+}
+
+export const FLOOR_ART = [
+  { bg: 'hintergruende/etage_roesterei', floorLine: 447, machine: 'maschinen/trommelroester', prop: 'requisiten/roesterei_saecke', product: 'produkte/roestnibs', operator: 'figuren/arbeiter_schaufel' },
+  { bg: 'hintergruende/etage_trinkkakao', floorLine: 458, machine: 'maschinen/conche', prop: 'requisiten/kakao_regal', product: 'produkte/trinkkakao', operator: 'figuren/vorarbeiter' },
+  { bg: 'hintergruende/etage_veredelung', floorLine: 446, machine: 'maschinen/giessanlage', prop: 'requisiten/tafeln_tisch', product: 'produkte/schokoladentafel', operator: 'figuren/chocolatiere' },
+  { bg: 'hintergruende/etage_pralinen', floorLine: 450, machine: 'maschinen/ueberziehmaschine', prop: 'requisiten/pralinen_wagen', product: 'produkte/pralinen', operator: 'figuren/arbeiterin_sack' },
+  { bg: 'hintergruende/etage_trueffel', floorLine: 458, machine: 'maschinen/trueffel_atelier', prop: 'requisiten/trueffel_kommode', product: 'produkte/trueffel', operator: 'figuren/meisterin' },
+];

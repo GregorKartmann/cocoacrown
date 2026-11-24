@@ -1,0 +1,48 @@
+// Dev helper: scripted play-through with screenshots at key moments.
+import { chromium } from '@playwright/test';
+const url = process.argv[2] ?? 'http://localhost:4173/';
+const out = process.argv[3] ?? '/tmp/shots';
+const browser = await chromium.launch({ channel: 'chrome', args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+const page = await ctx.newPage();
+const logs = [];
+page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}`));
+page.on('console', (m) => m.type() === 'error' && logs.push(`[error] ${m.text()}`));
+await page.goto(url);
+await page.waitForTimeout(1800);
+// find station positions via the debug hook
+const pos = async () => page.evaluate(() => window.__cc?.positions());
+let p = await pos();
+console.log('positions', JSON.stringify(p));
+const tap = async (pt) => { await page.touchscreen.tap(pt.x, pt.y); await page.waitForTimeout(120); };
+await tap(p.f0);
+await page.waitForTimeout(3300);
+await page.screenshot({ path: `${out}/02-batch.png` });
+await tap(p.lift);
+await page.waitForTimeout(3200);
+await tap(p.ship);
+await page.waitForTimeout(1000);
+await page.screenshot({ path: `${out}/03-ship.png` });
+await page.waitForTimeout(2600);
+// cheat money for UI review
+await page.evaluate(() => window.__cc?.give(5000));
+await page.waitForTimeout(300);
+p = await pos();
+await tap(p.f0badge);
+await page.waitForTimeout(700);
+await page.screenshot({ path: `${out}/04-station.png` });
+await page.click('[data-testid=buy]');
+await page.waitForTimeout(300);
+await page.keyboard.press('Escape');
+await page.waitForTimeout(300);
+await page.click('[data-testid=nav-managers]');
+await page.waitForTimeout(600);
+await page.screenshot({ path: `${out}/05a-managers.png` });
+await page.click('[data-testid=hire]');
+await page.waitForTimeout(900);
+await page.screenshot({ path: `${out}/05-hire.png` });
+await page.mouse.click(195, 820);
+await page.waitForTimeout(500);
+await page.screenshot({ path: `${out}/06-after-hire.png` });
+console.log(logs.join('\n'));
+await browser.close();
