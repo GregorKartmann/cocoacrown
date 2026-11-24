@@ -225,7 +225,7 @@ export function shipStatsAt(s: GameState, level: number): ShipStats {
     perVan: capacity.div(vans),
     roundTrip,
     dispatchInterval: roundTrip / vans,
-    priceFactor: managerFactor(m, 'price'),
+    priceFactor: managerFactor(m, 'price') * crownFactor(s),
     rate: capacity.div(roundTrip),
     speedFactor: speed,
   };
@@ -233,6 +233,47 @@ export function shipStatsAt(s: GameState, level: number): ShipStats {
 
 export function shipStats(s: GameState): ShipStats {
   return shipStatsAt(s, s.ship.level);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Prestige: crowns                                                           */
+/* ------------------------------------------------------------------------- */
+
+/** Permanent income multiplier from crowns (applied to the sale price). */
+export function crownFactor(s: GameState): number {
+  return 1 + BALANCE.prestige.perCrown * s.prestige.crowns;
+}
+
+export function crownFactorFor(crowns: number): number {
+  return 1 + BALANCE.prestige.perCrown * crowns;
+}
+
+/** Crowns earned in total so far by lifetime earnings (owned + claimable). */
+export function crownsByEarnings(lifetime: Decimal): number {
+  if (lifetime.lte(0)) return 0;
+  return Math.floor(lifetime.div(BALANCE.prestige.divisor).sqrt().toNumber() + 1e-9);
+}
+
+/** The brand can be sold once the 5th floor was built at least once. */
+export function prestigeUnlocked(s: GameState): boolean {
+  return s.prestige.runs > 0 || s.prestige.bestFloor5 !== null;
+}
+
+/** Crowns a brand sale would give right now. */
+export function crownsAvailable(s: GameState): number {
+  return Math.max(0, crownsByEarnings(s.stats.totalEarned) - s.prestige.crowns);
+}
+
+/** Lifetime earnings at which the next claimable crown appears. */
+export function nextCrownAt(s: GameState): Decimal {
+  const k = Math.max(crownsByEarnings(s.stats.totalEarned), s.prestige.crowns) + 1;
+  return D(BALANCE.prestige.divisor).mul(k).mul(k);
+}
+
+/** Lifetime earnings at which the current crown count started (for progress bars). */
+export function crownStepStart(s: GameState): Decimal {
+  const k = Math.max(crownsByEarnings(s.stats.totalEarned), s.prestige.crowns);
+  return D(BALANCE.prestige.divisor).mul(k).mul(k);
 }
 
 /* ------------------------------------------------------------------------- */

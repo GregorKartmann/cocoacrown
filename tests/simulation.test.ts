@@ -26,7 +26,25 @@ describe('Manueller Betrieb', () => {
     let effective = 0;
     for (let i = 0; i < 20; i++) if (tapStation(s, 'f0') === 'boosted') effective++;
     expect(effective).toBe(BALANCE.tap.maxPerSecond);
-    expect(s.floors[0].progress).toBeCloseTo(BALANCE.tap.boost * BALANCE.tap.maxPerSecond, 6);
+    const cycle = floorStats(s, 0).cycle;
+    // nothing jumps: the earned time is queued (capped) …
+    expect(s.floors[0].progress).toBe(0);
+    expect(s.floors[0].rush).toBeCloseTo(Math.min(BALANCE.tap.boost * BALANCE.tap.maxPerSecond, BALANCE.tap.maxQueue) * cycle, 6);
+    // … and paid out as extra speed, never more than maxSpeed× per step
+    step(s, 0.05, { events: null, offline: false });
+    expect(s.floors[0].progress).toBeCloseTo((0.05 * BALANCE.tap.maxSpeed) / cycle, 6);
+  });
+
+  it('Getippte Zeit bringt insgesamt so viel wie vorher der Sprung', () => {
+    const a = newGame();
+    const b = newGame();
+    tapStation(a, 'f0');
+    tapStation(b, 'f0');
+    for (let i = 0; i < 3; i++) tapStation(b, 'f0');
+    const cycle = floorStats(a, 0).cycle;
+    run(a, cycle * 0.25);
+    run(b, cycle * 0.25);
+    expect(b.floors[0].progress - a.floors[0].progress).toBeCloseTo(3 * BALANCE.tap.boost, 6);
   });
 
   it('Der komplette Kreislauf Tippen → Aufzug → Verkauf erzeugt Geld', () => {

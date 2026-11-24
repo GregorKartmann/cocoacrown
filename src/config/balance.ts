@@ -174,11 +174,35 @@ export const BALANCE = {
     costSkillFactor: 0.5,
   },
 
+  prestige: {
+    /**
+     * Crowns from lifetime earnings: floor(sqrt(lifetime / divisor)) minus the
+     * crowns already owned. The square root makes waiting longer worth less and
+     * less, so "when do I sell?" stays a real decision.
+     */
+    divisor: 1e7,
+    /** Income bonus per crown (+10 %, additive). */
+    perCrown: 0.1,
+    /**
+     * Estimate for the sale dialog: time to the 5th floor scales with
+     * (crown factor)^-exponent. Fitted to the bot campaigns in
+     * tests/prestige.test.ts (runs 2–4 land between 0.79 and 0.94).
+     */
+    estimateExponent: 0.8,
+  },
+
   tap: {
-    /** Progress added per tap on a running cycle (fraction of a cycle or trip). */
+    /** Progress earned per tap on a running cycle (fraction of a cycle or trip). */
     boost: 0.1,
     /** Effective taps per second and station; extra taps only give feedback. */
     maxPerSecond: 6,
+    /**
+     * Taps do not jump: the earned progress is paid out smoothly by running the
+     * station up to this many times faster until the queued time is used up.
+     */
+    maxSpeed: 3,
+    /** Queued tap time is capped at this fraction of a cycle or trip. */
+    maxQueue: 0.6,
   },
 
   golden: {

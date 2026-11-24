@@ -45,4 +45,5 @@ export const QUESTS: QuestDef[] = [
   { id: 'q-pralines', title: 'Pralinen', text: 'Baue die vierte Etage: Pralinen.', target: 1, progress: (s) => (s.floors[3].unlocked ? 1 : 0), reward: 400000, focus: 'f3' },
   { id: 'q-truffles', title: 'Das Kronjuwel', text: 'Baue die fünfte Etage: das Trüffel-Atelier.', target: 1, progress: (s) => (s.floors[4].unlocked ? 1 : 0), reward: 6000000, focus: 'f4' },
   { id: 'q-level-100', title: 'Meisterbetrieb', text: 'Bringe eine Etage auf Level 100. Die Maschine erreicht ihre höchste Ausbaustufe.', target: 100, progress: maxFloorLevel, reward: 50000000 },
+  { id: 'q-prestige', title: 'Eine Krone für die Marke', text: 'Verkaufe deine Marke (Krone oben neben den Einstellungen). Du startest neu, behältst aber deine Manager und bekommst dauerhaft mehr Einkommen.', target: 1, progress: (s) => s.prestige.runs, reward: 250 },
 ];

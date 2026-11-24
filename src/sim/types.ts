@@ -23,6 +23,8 @@ export interface Manager {
   bonus: ManagerBonus;
   look: ManagerLook;
   assignedTo: StationId | null;
+  /** Station the manager worked at before the last brand sale; rejoins it when it is rebuilt. */
+  home: StationId | null;
   /** Seconds the active skill is still running. */
   skillActive: number;
   /** Seconds until the skill can be used again. */
@@ -40,6 +42,8 @@ export interface FloorState {
   managerId: string | null;
   stalled: boolean;
   tapBudget: number;
+  /** Seconds of extra running time earned by taps, paid out smoothly. */
+  rush: number;
 }
 
 export type LiftPhase = 'idle' | 'up' | 'stop' | 'down' | 'unload';
@@ -57,6 +61,8 @@ export interface LiftState {
   /** Depot was full while unloading. */
   blocked: boolean;
   tapBudget: number;
+  /** Seconds of extra running time earned by taps, paid out smoothly. */
+  rush: number;
 }
 
 export type VanPhase = 'dock' | 'out' | 'back';
@@ -76,6 +82,8 @@ export interface ShipState {
   sinceDispatch: number;
   request: boolean;
   tapBudget: number;
+  /** Seconds of extra running time earned by taps, paid out smoothly. */
+  rush: number;
 }
 
 export type BoostKind = 'rush' | 'express';
@@ -105,6 +113,18 @@ export interface Stats {
   offlineSeconds: number;
 }
 
+export interface PrestigeState {
+  /** Crowns owned; each adds BALANCE.prestige.perCrown to income, forever. */
+  crowns: number;
+  /** Number of brand sales so far. */
+  runs: number;
+  /** Lifetime earnings and play time when the current run started. */
+  runStartEarned: Decimal;
+  runStartPlay: number;
+  /** Fastest time (s) from a run start to the 5th floor, if reached. */
+  bestFloor5: number | null;
+}
+
 export interface Settings {
   notation: Notation;
   sound: boolean;
@@ -131,12 +151,14 @@ export interface GameState {
   golden: GoldenState;
   stats: Stats;
   quest: { index: number };
+  prestige: PrestigeState;
   rng: number;
   settings: Settings;
 }
 
 export type SimEvent =
   | { type: 'batch'; floor: number; value: Decimal }
+  | { type: 'brandSold'; crowns: number }
   | { type: 'liftLoad'; floor: number; value: Decimal }
   | { type: 'liftUnload'; value: Decimal }
   | { type: 'vanDepart'; van: number; value: Decimal }

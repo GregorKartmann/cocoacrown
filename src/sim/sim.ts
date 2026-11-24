@@ -17,10 +17,24 @@ export function step(s: GameState, dt: number, ctx: SimContext): void {
   if (!ctx.offline) s.stats.playSeconds += dt;
 
   tickTimers(s, dt, ctx);
-  for (let i = 0; i < s.floors.length; i++) floorAdvance(s, i, dt, ctx);
-  liftAdvance(s, dt, ctx);
-  shipAdvance(s, dt, ctx);
+  for (let i = 0; i < s.floors.length; i++) {
+    const f = s.floors[i];
+    floorAdvance(s, i, dt + payRush(f, dt), ctx);
+    if (!f.running || f.stalled) f.rush = 0;
+  }
+  liftAdvance(s, dt + payRush(s.lift, dt), ctx);
+  if (s.lift.phase === 'idle') s.lift.rush = 0;
+  shipAdvance(s, dt + payRush(s.ship, dt), ctx);
+  if (!s.ship.vans.some((v) => v.phase !== 'dock')) s.ship.rush = 0;
   if (!ctx.offline) goldenAdvance(s, dt, ctx);
+}
+
+/** Extra seconds a station runs this step from tap time it has earned (smooth, at most maxSpeed×). */
+function payRush(st: { rush: number }, dt: number): number {
+  if (st.rush <= 0) return 0;
+  const extra = Math.min(st.rush, dt * (BALANCE.tap.maxSpeed - 1));
+  st.rush -= extra;
+  return extra;
 }
 
 function refill(budget: number, dt: number): number {

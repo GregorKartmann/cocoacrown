@@ -7,15 +7,19 @@ import {
   bulkUpgradeCost,
   costFactor,
   costParams,
+  crownsAvailable,
   floorIndex,
+  prestigeUnlocked,
   floorUnlockCost,
   liftStats,
   managerHireCost,
   maxAffordableLevels,
+  floorStats,
   shipStats,
   stationLevel,
 } from './formulas';
-import { floorAdvance, liftAdvance, scheduleGolden } from './sim';
+import { freshFloors, freshLift, freshShip } from './init';
+import { scheduleGolden } from './sim';
 import { nextRandom, randomInt, weightedPick } from './rng';
 import type { BuyMode, GameState, Manager, ManagerCategory, SimContext, StationId } from './types';
 
@@ -70,6 +74,12 @@ export function unlockFloor(s: GameState, i: number): boolean {
   s.money = s.money.sub(cost);
   f.unlocked = true;
   f.level = 1;
+  // A manager who ran this floor before the last brand sale returns on their own.
+  const station = `f${i}` as StationId;
+  const back = s.managers.find((m) => m.home === station && !m.assignedTo);
+  if (back) assignManager(s, back.id, station);
+  for (const m of s.managers) if (m.home === station) m.home = null;
+  if (i === s.floors.length - 1) noteFloor5(s);
   return true;
 }
 
@@ -99,6 +109,7 @@ export function hireManager(s: GameState, category: ManagerCategory): Manager | 
     bonus,
     look: { skin: randomInt(s, 5), hair: randomInt(s, 5), hairColor: randomInt(s, 6), accessory: randomInt(s, 5) },
     assignedTo: null,
+    home: null,
     skillActive: 0,
     skillCooldown: 0,
   };
@@ -141,6 +152,7 @@ export function assignManager(s: GameState, managerId: string, station: StationI
     setStationManager(s, station, m.id);
   }
   m.assignedTo = station;
+  if (station) m.home = null;
   return true;
 }
 
@@ -162,11 +174,17 @@ export type TapResult = 'started' | 'boosted' | 'limited' | 'nothing';
 
 const HEADLESS: SimContext = { events: null, offline: false };
 
+/** Queues tap time for smooth payout (see step()); returns the new queue. */
+function queueRush(current: number, cycle: number): number {
+  return Math.min(current + cycle * BALANCE.tap.boost, cycle * BALANCE.tap.maxQueue);
+}
+
 /**
- * A tap starts an idle station (manual mode) or pushes a running one forward
- * by BALANCE.tap.boost of a cycle. A token bucket caps the useful rate.
+ * A tap starts an idle station (manual mode) or earns a running one
+ * BALANCE.tap.boost of a cycle, paid out smoothly as extra speed so lift, vans
+ * and machines never jump. A token bucket caps the useful rate.
  */
-export function tapStation(s: GameState, station: StationId, ctx: SimContext = HEADLESS): TapResult {
+export function tapStation(s: GameState, station: StationId, _ctx: SimContext = HEADLESS): TapResult {
   s.stats.taps += 1;
   if (station === 'lift') {
     const L = s.lift;
@@ -176,7 +194,7 @@ export function tapStation(s: GameState, station: StationId, ctx: SimContext = H
     }
     if (L.tapBudget < 1) return 'limited';
     L.tapBudget -= 1;
-    liftAdvance(s, liftStats(s).tripTime * BALANCE.tap.boost, ctx);
+    L.rush = queueRush(L.rush, liftStats(s).tripTime);
     return 'boosted';
   }
   if (station === 'ship') {
@@ -189,8 +207,7 @@ export function tapStation(s: GameState, station: StationId, ctx: SimContext = H
     const moving = S.vans.filter((v) => v.phase !== 'dock');
     if (!moving.length) return 'nothing';
     S.tapBudget -= 1;
-    const push = shipStats(s).roundTrip * BALANCE.tap.boost;
-    for (const v of moving) v.timer = Math.max(0, v.timer - push);
+    S.rush = queueRush(S.rush, shipStats(s).roundTrip);
     return 'boosted';
   }
   const i = floorIndex(station);
@@ -204,9 +221,52 @@ export function tapStation(s: GameState, station: StationId, ctx: SimContext = H
   if (f.stalled) return 'nothing';
   if (f.tapBudget < 1) return 'limited';
   f.tapBudget -= 1;
-  f.progress += BALANCE.tap.boost;
-  floorAdvance(s, i, 0, ctx);
+  f.rush = queueRush(f.rush, floorStats(s, i).cycle);
   return 'boosted';
+}
+
+/* ------------------------------------------------------------------------- */
+/* Prestige: "Marke verkaufen"                                                */
+/* ------------------------------------------------------------------------- */
+
+/**
+ * Sells the brand: crowns for lifetime earnings, then a fresh manufactory.
+ * Resets money, floors, levels, logistics and running boni. Keeps crowns,
+ * managers (and their hire count), quests, statistics and settings. Managers
+ * of floors 2–5 remember their floor and return when it is rebuilt.
+ * Returns the crowns gained (0 = nothing happened).
+ */
+export function sellBrand(s: GameState): number {
+  const gained = crownsAvailable(s);
+  if (gained < 1 || !prestigeUnlocked(s)) return 0;
+  s.prestige.crowns += gained;
+  s.prestige.runs += 1;
+  s.prestige.runStartEarned = s.stats.totalEarned;
+  s.prestige.runStartPlay = s.stats.playSeconds;
+
+  const keep: StationId[] = ['f0', 'lift', 'ship'];
+  for (const m of s.managers) {
+    if (m.assignedTo && !keep.includes(m.assignedTo)) {
+      m.home = m.assignedTo;
+      m.assignedTo = null;
+    }
+    m.skillActive = 0;
+    m.skillCooldown = 0;
+  }
+  s.money = D(BALANCE.startMoney);
+  s.floors = freshFloors();
+  s.lift = freshLift();
+  s.ship = freshShip();
+  for (const m of s.managers) if (m.assignedTo) setStationManager(s, m.assignedTo, m.id);
+  s.boosts = [];
+  s.golden = { nextIn: BALANCE.golden.firstSpawn, active: null };
+  return gained;
+}
+
+/** Remembers the fastest way to the 5th floor (shown in the brand-sale dialog). */
+export function noteFloor5(s: GameState): void {
+  const t = s.stats.playSeconds - s.prestige.runStartPlay;
+  if (s.prestige.bestFloor5 === null || t < s.prestige.bestFloor5) s.prestige.bestFloor5 = t;
 }
 
 /* ------------------------------------------------------------------------- */

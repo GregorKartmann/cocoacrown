@@ -1,13 +1,14 @@
 import { useRef, useState } from 'react';
+import { canVibrate, isIos } from '../../audio/audio';
 import { BALANCE } from '../../config/balance';
 import { QUESTS } from '../../config/quests';
-import { formatDuration, formatMoney, formatNumber, formatRate } from '../../core/format';
+import { formatDuration, formatMoney, formatMultiplier, formatNumber, formatRate } from '../../core/format';
 import { quoteUpgrade } from '../../sim/actions';
-import { analyzeFlow, floorStats, liftStats, shipStats } from '../../sim/formulas';
+import { analyzeFlow, crownFactor, floorStats, liftStats, prestigeUnlocked, shipStats } from '../../sim/formulas';
 import type { StationId } from '../../sim/types';
 import { useGameVersion, useStore } from '../useGame';
 import { Sheet } from './Hud';
-import { IconCheck, IconFactory, IconGear, IconQuest, IconSound, IconStats } from '../icons';
+import { IconCheck, IconCrown, IconFactory, IconGear, IconQuest, IconSound, IconStats } from '../icons';
 import { stationName } from './ManagerSheet';
 import { DEV_STATUS, APP_VERSION } from '../devStatus';
 
@@ -28,7 +29,8 @@ export function OverviewSheet({ onClose, onStation }: { onClose: () => void; onS
   return (
     <Sheet title="Werksübersicht" sub="Alle Stationen auf einen Blick" icon={<IconFactory size={40} />} onClose={onClose}>
       <p className="flavor">
-        Dein Einkommen ist so hoch wie die langsamste Stufe: Produktion {formatRate(flow.production, n)}, Aufzug {formatRate(flow.lift, n)}, Versand {formatRate(flow.ship, n)}.
+        Dein Einkommen ist so hoch wie die langsamste Stufe: Produktion {formatRate(flow.production.mul(flow.priceFactor), n)}, Aufzug{' '}
+        {formatRate(flow.lift.mul(flow.priceFactor), n)}, Versand {formatRate(flow.ship.mul(flow.priceFactor), n)}.
         {flow.priceFactor !== 1 && ` Verkaufspreis ×${formatNumber(flow.priceFactor, n, 2)}.`}
       </p>
       <div className="buy-modes">
@@ -92,7 +94,7 @@ export function QuestsSheet({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function StatsSheet({ onClose }: { onClose: () => void }) {
+export function StatsSheet({ onClose, onPrestige }: { onClose: () => void; onPrestige: () => void }) {
   useGameVersion();
   const store = useStore();
   const s = store.state;
@@ -111,6 +113,10 @@ export function StatsSheet({ onClose }: { onClose: () => void }) {
     ['Goldene Kakaobohnen', formatNumber(st.goldenCaught, n, 0)],
     ['Manager eingestellt', formatNumber(st.managersHired, n, 0)],
     ['Fähigkeiten eingesetzt', formatNumber(st.skillsUsed, n, 0)],
+    ['Kronen', `${formatNumber(s.prestige.crowns, n, 0)} (Einkommen ${formatMultiplier(crownFactor(s))})`],
+    ['Marke verkauft', `${formatNumber(s.prestige.runs, n, 0)}×`],
+    ['Schnellster Weg zur 5. Etage', s.prestige.bestFloor5 === null ? '–' : formatDuration(s.prestige.bestFloor5)],
+    ['Dieser Durchlauf', `${formatDuration(st.playSeconds - s.prestige.runStartPlay)} · ${formatMoney(st.totalEarned.sub(s.prestige.runStartEarned), n)}`],
   ];
   return (
     <Sheet title="Statistik" icon={<IconStats size={40} />} onClose={onClose}>
@@ -124,6 +130,9 @@ export function StatsSheet({ onClose }: { onClose: () => void }) {
           ))}
         </tbody>
       </table>
+      <button className="btn gold block" style={{ marginTop: 12 }} onClick={onPrestige} data-testid="open-prestige">
+        <IconCrown size={22} /> {prestigeUnlocked(s) ? 'Marke verkaufen …' : 'Marke verkaufen (ab der 5. Etage)'}
+      </button>
     </Sheet>
   );
 }
@@ -135,7 +144,6 @@ export function SettingsSheet({ onClose, installPrompt, onInstall }: { onClose: 
   const fileRef = useRef<HTMLInputElement>(null);
   const [confirmReset, setConfirmReset] = useState(0);
   const [msg, setMsg] = useState<string | null>(null);
-  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const standalone = window.matchMedia?.('(display-mode: standalone)').matches || (navigator as unknown as { standalone?: boolean }).standalone;
   // Inside a host page (e.g. the Claude artifact preview) the game cannot be installed:
   // a home-screen shortcut would open the host page, not the game.
@@ -195,7 +203,7 @@ export function SettingsSheet({ onClose, installPrompt, onInstall }: { onClose: 
     <Sheet title="Einstellungen" icon={<IconGear size={40} />} onClose={onClose}>
       {toggle('sound', 'Geräusche')}
       {toggle('music', 'Musik')}
-      {toggle('haptics', 'Vibration')}
+      {(canVibrate || isIos) && toggle('haptics', isIos && !canVibrate ? 'Vibration (ab iOS 18)' : 'Vibration')}
       <div className="toggle-row">
         <span>Zahlen</span>
         <div className="seg">

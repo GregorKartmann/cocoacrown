@@ -11,6 +11,7 @@ import { BottomNav, OfflineDialog, QuestCard, Toasts, TopBar, type ToastItem } f
 import { StationSheet, UnlockSheet } from './components/StationSheet';
 import { HireReveal, ManagerSheet, stationName } from './components/ManagerSheet';
 import { OverviewSheet, QuestsSheet, SettingsSheet, StatsSheet } from './components/MenuSheets';
+import { BrandSoldDialog, PrestigeSheet } from './components/PrestigeSheet';
 
 type SheetState =
   | { kind: 'station'; id: StationId }
@@ -19,6 +20,7 @@ type SheetState =
   | { kind: 'overview' }
   | { kind: 'quests' }
   | { kind: 'stats' }
+  | { kind: 'prestige' }
   | { kind: 'settings' };
 
 interface BeforeInstallPromptEvent extends Event {
@@ -34,6 +36,7 @@ export function App({ store, updateAvailable, onUpdate }: { store: GameStore; up
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [bump, setBump] = useState(0);
   const [reveal, setReveal] = useState<string | null>(null);
+  const [sold, setSold] = useState<number | null>(null);
   const [installEvt, setInstallEvt] = useState<BeforeInstallPromptEvent | null>(null);
   const toastId = useRef(0);
 
@@ -143,6 +146,12 @@ export function App({ store, updateAvailable, onUpdate }: { store: GameStore; up
           audio.play('skill');
           break;
         }
+        case 'brandSold':
+          audio.play('milestone');
+          haptic(hap, 60);
+          setSheet(null);
+          setSold(e.crowns);
+          break;
         case 'fail':
           audio.play('fail');
           haptic(hap, 20);
@@ -225,7 +234,7 @@ export function App({ store, updateAvailable, onUpdate }: { store: GameStore; up
     <GameContext.Provider value={store}>
       <div className="app">
         <div className="world-host" ref={hostRef} data-testid="world" />
-        <TopBar onSettings={() => setSheet({ kind: 'settings' })} onStation={openStation} bump={bump} refEl={topRef} />
+        <TopBar onSettings={() => setSheet({ kind: 'settings' })} onStation={openStation} onPrestige={() => setSheet({ kind: 'prestige' })} bump={bump} refEl={topRef} />
         <div className="bottom-ui" ref={bottomRef}>
           <QuestCard onFocus={(id) => worldRef.current?.focus(id)} onClaim={() => store.claimQuest()} />
           <BottomNav onOpen={(w) => setSheet({ kind: w } as SheetState)} refEl={null} />
@@ -247,7 +256,8 @@ export function App({ store, updateAvailable, onUpdate }: { store: GameStore; up
         {sheet?.kind === 'managers' && <ManagerSheet target={sheet.target} onClose={close} onHired={(id) => setReveal(id)} />}
         {sheet?.kind === 'overview' && <OverviewSheet onClose={close} onStation={openStation} />}
         {sheet?.kind === 'quests' && <QuestsSheet onClose={close} />}
-        {sheet?.kind === 'stats' && <StatsSheet onClose={close} />}
+        {sheet?.kind === 'stats' && <StatsSheet onClose={close} onPrestige={() => setSheet({ kind: 'prestige' })} />}
+        {sheet?.kind === 'prestige' && <PrestigeSheet onClose={close} />}
         {sheet?.kind === 'settings' && (
           <SettingsSheet
             onClose={close}
@@ -259,6 +269,15 @@ export function App({ store, updateAvailable, onUpdate }: { store: GameStore; up
           />
         )}
         {reveal && <HireReveal managerId={reveal} onClose={() => setReveal(null)} />}
+        {sold !== null && (
+          <BrandSoldDialog
+            crowns={sold}
+            onClose={() => {
+              setSold(null);
+              worldRef.current?.focus('f0');
+            }}
+          />
+        )}
         <OfflineDialog
           onCollect={() => {
             store.dismissOffline();

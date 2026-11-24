@@ -588,8 +588,10 @@ export class ConstructionView extends Container {
 
   constructor(onTap: () => void) {
     super();
+    // the empty, not yet furnished hall behind the scaffold (painted "Werkstatt" backdrop, dimmed)
+    const hall = roomBackground('hintergruende/werkstatt_alternativ', 510, STAND, L.floorH);
     const back = new Graphics();
-    back.rect(0, 0, L.interiorW, L.floorH).fill({ color: P.espresso, alpha: 0.45 });
+    back.rect(0, 0, L.interiorW, L.floorH).fill({ color: P.espresso, alpha: 0.42 });
     back.rect(0, L.floorH - 10, L.interiorW, 10).fill(P.espressoLight);
     const scaffold = sprite('gebaeude/baugeruest');
     fit(scaffold, L.interiorW + 10, L.floorH - 4);
@@ -602,7 +604,7 @@ export class ConstructionView extends Container {
     box.y = hoist.height - 6;
     this.chain.addChild(hoist, box);
     this.chain.position.set(48, -6);
-    this.addChild(back, scaffold, this.chain, pillar(L.floorH));
+    this.addChild(hall, back, scaffold, this.chain, pillar(L.floorH));
 
     const title = label('NEUE ETAGE', { fontSize: 10, letterSpacing: 1.2, fill: P.brassLight, stroke: { color: P.espresso, width: 3 } });
     title.anchor.set(0.5);

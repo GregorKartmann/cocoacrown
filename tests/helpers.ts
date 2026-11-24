@@ -24,6 +24,7 @@ export function giveManager(s: GameState, category: ManagerCategory, station: St
     bonus,
     look: { skin: 0, hair: 0, hairColor: 0, accessory: 0 },
     assignedTo: null,
+    home: null,
     skillActive: 0,
     skillCooldown: 0,
   };

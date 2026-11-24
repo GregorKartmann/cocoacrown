@@ -94,3 +94,38 @@ test('PWA: Manifest, Service Worker und Offline-Start', async ({ page, context }
   await expect(page.getByTestId('money')).toBeVisible({ timeout: 15000 });
   await context.setOffline(false);
 });
+
+test('Marke verkaufen: Kronen, Neustart, Manager bleiben, Stand übersteht Neuladen', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await open(page);
+  await page.evaluate(() => {
+    const cc = (window as unknown as { __cc: { store: any; give(v: number): void } }).__cc; // eslint-disable-line @typescript-eslint/no-explicit-any
+    cc.give(5e9);
+    for (let f = 1; f < 5; f++) cc.store.unlock(f);
+    cc.store.hire('floor', 'f3');
+    cc.store.state.stats.totalEarned = cc.store.state.stats.totalEarned.add(4e8);
+    cc.store.notify(true);
+  });
+  await page.getByTestId('crown-btn').click();
+  await expect(page.getByTestId('prestige-gain')).toContainText('+6 Kronen');
+  await page.waitForTimeout(400);
+  await page.getByTestId('sell-brand').click();
+  await page.getByTestId('sell-brand').click();
+  await expect(page.getByTestId('brand-sold')).toBeVisible();
+  await page.waitForTimeout(450);
+  await page.getByTestId('brand-sold-ok').click();
+  const st = await page.evaluate(() => {
+    const s = (window as unknown as { __cc: { store: { state: any } } }).__cc.store.state; // eslint-disable-line @typescript-eslint/no-explicit-any
+    return { crowns: s.prestige.crowns, floors: s.floors.filter((f: { unlocked: boolean }) => f.unlocked).length, money: s.money.toNumber(), home: s.managers[0].home };
+  });
+  expect(st).toEqual({ crowns: 6, floors: 1, money: 0, home: 'f3' });
+  await page.evaluate(() => (window as unknown as { __cc: { store: { onHidden(): void } } }).__cc.store.onHidden());
+  await page.waitForTimeout(500);
+  await page.reload();
+  await expect(page.getByTestId('money')).toBeVisible();
+  await page.waitForFunction(() => !!(window as unknown as { __cc?: unknown }).__cc);
+  const crowns = await page.evaluate(() => (window as unknown as { __cc: { store: { state: { prestige: { crowns: number } } } } }).__cc.store.state.prestige.crowns);
+  expect(crowns).toBe(6);
+  expect(errors).toEqual([]);
+});

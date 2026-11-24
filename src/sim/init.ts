@@ -1,12 +1,59 @@
 import { BALANCE } from '../config/balance';
 import { D } from '../core/num';
 import { randomSeed } from './rng';
-import type { GameState, Settings } from './types';
+import type { FloorState, GameState, LiftState, PrestigeState, Settings, ShipState } from './types';
 
-export const SAVE_VERSION = 1;
+/** v2: prestige ("Marke verkaufen"), manager home stations, smooth tap time. */
+export const SAVE_VERSION = 2;
 
 export function defaultSettings(): Settings {
   return { notation: 'short', sound: true, music: true, haptics: true, buyMode: 1 };
+}
+
+export function freshFloors(): FloorState[] {
+  return BALANCE.floors.map((_, i) => ({
+    unlocked: i === 0,
+    level: 1,
+    progress: 0,
+    running: false,
+    buffer: D(0),
+    managerId: null,
+    stalled: false,
+    tapBudget: BALANCE.tap.maxPerSecond,
+    rush: 0,
+  }));
+}
+
+export function freshLift(): LiftState {
+  return {
+    level: 1,
+    managerId: null,
+    phase: 'idle',
+    pos: 0,
+    timer: 0,
+    cargo: D(0),
+    request: false,
+    blocked: false,
+    tapBudget: BALANCE.tap.maxPerSecond,
+    rush: 0,
+  };
+}
+
+export function freshShip(): ShipState {
+  return {
+    level: 1,
+    managerId: null,
+    vans: [{ phase: 'dock', timer: 0, cargo: D(0) }],
+    depot: D(0),
+    sinceDispatch: 999,
+    request: false,
+    tapBudget: BALANCE.tap.maxPerSecond,
+    rush: 0,
+  };
+}
+
+export function defaultPrestige(): PrestigeState {
+  return { crowns: 0, runs: 0, runStartEarned: D(0), runStartPlay: 0, bestFloor5: null };
 }
 
 export function createGame(now = Date.now(), seed = randomSeed(), settings: Settings = defaultSettings()): GameState {
@@ -16,36 +63,9 @@ export function createGame(now = Date.now(), seed = randomSeed(), settings: Sett
     lastWallTime: now,
     simTime: 0,
     money: D(BALANCE.startMoney),
-    floors: BALANCE.floors.map((_, i) => ({
-      unlocked: i === 0,
-      level: 1,
-      progress: 0,
-      running: false,
-      buffer: D(0),
-      managerId: null,
-      stalled: false,
-      tapBudget: BALANCE.tap.maxPerSecond,
-    })),
-    lift: {
-      level: 1,
-      managerId: null,
-      phase: 'idle',
-      pos: 0,
-      timer: 0,
-      cargo: D(0),
-      request: false,
-      blocked: false,
-      tapBudget: BALANCE.tap.maxPerSecond,
-    },
-    ship: {
-      level: 1,
-      managerId: null,
-      vans: [{ phase: 'dock', timer: 0, cargo: D(0) }],
-      depot: D(0),
-      sinceDispatch: 999,
-      request: false,
-      tapBudget: BALANCE.tap.maxPerSecond,
-    },
+    floors: freshFloors(),
+    lift: freshLift(),
+    ship: freshShip(),
     managers: [],
     hires: { floor: 0, lift: 0, ship: 0 },
     nextManagerId: 1,
@@ -64,6 +84,7 @@ export function createGame(now = Date.now(), seed = randomSeed(), settings: Sett
       offlineSeconds: 0,
     },
     quest: { index: 0 },
+    prestige: defaultPrestige(),
     rng: seed >>> 0,
     settings: { ...settings },
   };

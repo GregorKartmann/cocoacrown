@@ -35,6 +35,7 @@ export function toPlain(s: GameState): Record<string, unknown> {
     managers: s.managers.map((m) => ({ ...m, look: { ...m.look } })),
     boosts: s.boosts.map((b) => ({ ...b })),
     golden: { ...s.golden, active: s.golden.active ? { ...s.golden.active } : null },
+    prestige: { ...s.prestige, runStartEarned: ser(s.prestige.runStartEarned) },
   };
 }
 
@@ -126,6 +127,7 @@ export function fromPlain(o: Obj): GameState {
       managerId: f.managerId === null ? null : str(f.managerId, 'managerId'),
       stalled: bool(f.stalled, 'stalled'),
       tapBudget: num(f.tapBudget ?? BALANCE.tap.maxPerSecond, 'tapBudget', 0, BALANCE.tap.maxPerSecond),
+      rush: num(f.rush ?? 0, 'rush', 0, 1e6),
     };
   });
   if (!floors[0].unlocked) floors[0].unlocked = true;
@@ -141,6 +143,7 @@ export function fromPlain(o: Obj): GameState {
     request: bool(l.request, 'lift.request'),
     blocked: bool(l.blocked, 'lift.blocked'),
     tapBudget: num(l.tapBudget ?? BALANCE.tap.maxPerSecond, 'lift.tapBudget', 0, BALANCE.tap.maxPerSecond),
+    rush: num(l.rush ?? 0, 'lift.rush', 0, 1e6),
   };
 
   const sh = obj(o.ship, 'ship');
@@ -155,6 +158,7 @@ export function fromPlain(o: Obj): GameState {
     sinceDispatch: num(sh.sinceDispatch, 'ship.sinceDispatch', 0, 1e6),
     request: bool(sh.request, 'ship.request'),
     tapBudget: num(sh.tapBudget ?? BALANCE.tap.maxPerSecond, 'ship.tapBudget', 0, BALANCE.tap.maxPerSecond),
+    rush: num(sh.rush ?? 0, 'ship.rush', 0, 1e6),
   };
   if (!ship.vans.length) ship.vans.push({ phase: 'dock', timer: 0, cargo: dec('0', 'van') });
 
@@ -169,6 +173,7 @@ export function fromPlain(o: Obj): GameState {
       bonus: oneOf(m.bonus, BONUSES, 'manager.bonus'),
       look: { skin: int(look.skin, 'skin', 0, 9), hair: int(look.hair, 'hair', 0, 9), hairColor: int(look.hairColor, 'hairColor', 0, 9), accessory: int(look.accessory, 'acc', 0, 9) },
       assignedTo: m.assignedTo === null ? null : oneOf(m.assignedTo, STATIONS, 'manager.assignedTo'),
+      home: m.home === null || m.home === undefined ? null : oneOf(m.home, STATIONS, 'manager.home'),
       skillActive: num(m.skillActive, 'skillActive', 0, 3600),
       skillCooldown: num(m.skillCooldown, 'skillCooldown', 0, 3600),
     };
@@ -177,6 +182,7 @@ export function fromPlain(o: Obj): GameState {
   const hires = obj(o.hires, 'hires');
   const stats = obj(o.stats, 'stats');
   const golden = obj(o.golden, 'golden');
+  const prestige = obj(o.prestige, 'prestige');
   const goldenActive = golden.active === null || golden.active === undefined ? null : obj(golden.active, 'golden.active');
   const settings = obj(o.settings ?? defaultSettings(), 'settings');
   const def = defaultSettings();
@@ -220,6 +226,13 @@ export function fromPlain(o: Obj): GameState {
       offlineSeconds: num(stats.offlineSeconds, 'offlineSeconds', 0),
     },
     quest: { index: int(obj(o.quest, 'quest').index, 'quest.index', 0, 10000) },
+    prestige: {
+      crowns: int(prestige.crowns, 'prestige.crowns', 0, Number.MAX_SAFE_INTEGER),
+      runs: int(prestige.runs, 'prestige.runs', 0, 1e9),
+      runStartEarned: dec(prestige.runStartEarned, 'prestige.runStartEarned'),
+      runStartPlay: num(prestige.runStartPlay, 'prestige.runStartPlay', 0),
+      bestFloor5: prestige.bestFloor5 === null || prestige.bestFloor5 === undefined ? null : num(prestige.bestFloor5, 'prestige.bestFloor5', 0),
+    },
     rng: int(o.rng, 'rng', 0, 4294967295) >>> 0,
     settings: {
       notation: settings.notation === 'scientific' ? 'scientific' : 'short',

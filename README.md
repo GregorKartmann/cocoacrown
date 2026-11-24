@@ -4,7 +4,7 @@
 
 Der Branch `gh-pages` enthält den fertigen Build (`npm run build` → `dist/`).
 
-Idle-Tycoon-Spiel als Webapp und installierbare PWA. Vertical Slice 0.3.0 mit gemaltem Asset-Pack: die Manufaktur mit fünf Produktionsetagen, Lastenaufzug, Lieferwagen, Managern, Aufträgen, Goldener Kakaobohne, Offline-Progression und lokalen Spielständen.
+Idle-Tycoon-Spiel als Webapp und installierbare PWA. Version 0.4.0 mit gemaltem Asset-Pack und Prestige („Marke verkaufen“ gegen Kronen): die Manufaktur mit fünf Produktionsetagen, Lastenaufzug, Lieferwagen, Managern, Aufträgen, Goldener Kakaobohne, Offline-Progression und lokalen Spielständen.
 
 ## Starten
 

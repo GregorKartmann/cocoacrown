@@ -1,10 +1,11 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { BALANCE } from '../../config/balance';
-import { formatDuration, formatMoney, formatRate } from '../../core/format';
+import { formatDuration, formatMoney, formatNumber, formatRate } from '../../core/format';
 import { currentQuest } from '../../sim/actions';
+import { crownsAvailable, prestigeUnlocked } from '../../sim/formulas';
 import type { StationId } from '../../sim/types';
 import { useGameVersion, useStore } from '../useGame';
-import { IconBolt, IconBox, IconClose, IconCoin, IconFactory, IconGear, IconGift, IconLift, IconManager, IconQuest, IconStats, IconTruck, IconWatch } from '../icons';
+import { IconBolt, IconBox, IconClose, IconCoin, IconCrown, IconFactory, IconGear, IconGift, IconLift, IconManager, IconQuest, IconStats, IconTruck, IconWatch } from '../icons';
 
 /* ------------------------------------------------------------------ */
 
@@ -43,7 +44,19 @@ export function Sheet({ title, sub, onClose, children, icon }: { title: string; 
 
 /* ------------------------------------------------------------------ */
 
-export function TopBar({ onSettings, onStation, bump, refEl }: { onSettings: () => void; onStation: (id: StationId) => void; bump: number; refEl: React.Ref<HTMLDivElement> }) {
+export function TopBar({
+  onSettings,
+  onStation,
+  onPrestige,
+  bump,
+  refEl,
+}: {
+  onSettings: () => void;
+  onStation: (id: StationId) => void;
+  onPrestige: () => void;
+  bump: number;
+  refEl: React.Ref<HTMLDivElement>;
+}) {
   useGameVersion();
   const store = useStore();
   const s = store.state;
@@ -58,12 +71,14 @@ export function TopBar({ onSettings, onStation, bump, refEl }: { onSettings: () 
     return () => clearTimeout(t);
   }, [bump]);
   const showBottleneck = s.stats.vanTrips > 0;
+  const claimable = prestigeUnlocked(s) ? crownsAvailable(s) : 0;
   const topFloor = s.floors.reduce((m, f, i) => (f.unlocked ? i : m), 0);
   const prodStation = (`f${topFloor}`) as StationId;
   const chips: { id: StationId; key: 'production' | 'lift' | 'ship'; label: string; icon: ReactNode; v: string }[] = [
-    { id: prodStation, key: 'production', label: 'Produktion', icon: <IconBox />, v: formatRate(flow.production, n) },
-    { id: 'lift', key: 'lift', label: 'Aufzug', icon: <IconLift />, v: formatRate(flow.lift, n) },
-    { id: 'ship', key: 'ship', label: 'Versand', icon: <IconTruck />, v: formatRate(flow.ship, n) },
+    // shown as money per second (sale price incl. crowns), so the chips match the income line
+    { id: prodStation, key: 'production', label: 'Produktion', icon: <IconBox />, v: formatRate(flow.production.mul(flow.priceFactor), n) },
+    { id: 'lift', key: 'lift', label: 'Aufzug', icon: <IconLift />, v: formatRate(flow.lift.mul(flow.priceFactor), n) },
+    { id: 'ship', key: 'ship', label: 'Versand', icon: <IconTruck />, v: formatRate(flow.ship.mul(flow.priceFactor), n) },
   ];
   return (
     <div className="topbar" ref={refEl}>
@@ -79,6 +94,12 @@ export function TopBar({ onSettings, onStation, bump, refEl }: { onSettings: () 
             <span className="money-rate">+{formatRate(measured, n)}</span>
           </div>
         </div>
+        {prestigeUnlocked(s) && (
+          <button className={`btn icon-btn crown-btn ${claimable > 0 ? 'ready' : ''}`} onClick={onPrestige} aria-label="Marke verkaufen" data-testid="crown-btn">
+            <IconCrown size={30} />
+            {claimable > 0 && <span className="crown-badge">+{formatNumber(claimable, n, 0)}</span>}
+          </button>
+        )}
         <button className="btn icon-btn" onClick={onSettings} aria-label="Einstellungen">
           <IconGear size={30} />
         </button>

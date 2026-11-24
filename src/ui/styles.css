@@ -1024,25 +1024,27 @@ button {
   background: none;
   border: 16px solid transparent;
   border-image: var(--frame-parchment) 48 fill / 16px stretch;
-  border-radius: 0;
-  box-shadow: none;
-  filter: drop-shadow(0 4px 0 rgba(42, 23, 18, 0.45)) drop-shadow(0 10px 14px rgba(42, 23, 18, 0.35));
+  /* The shadow must not be a CSS filter: a drop-shadow filter also shadows
+     every glyph inside, which Safari draws as a doubled, offset copy of the text. */
+  border-radius: 18px;
+  box-shadow: 0 4px 0 rgba(42, 23, 18, 0.45), 0 10px 16px rgba(42, 23, 18, 0.32);
+  filter: none;
 }
 
 .btn {
   border: 13px solid transparent;
   border-image: var(--frame-parchment) 48 fill / 13px stretch;
   background: none;
-  border-radius: 0;
-  box-shadow: none;
+  border-radius: 13px;
+  box-shadow: 0 3px 0 rgba(42, 23, 18, 0.5);
   padding: 0 4px;
   color: var(--ink);
-  filter: drop-shadow(0 3px 0 rgba(42, 23, 18, 0.5));
+  filter: none;
 }
 .btn:active:not(:disabled) {
   transform: translateY(2px);
-  box-shadow: none;
-  filter: drop-shadow(0 1px 0 rgba(42, 23, 18, 0.5)) brightness(0.96);
+  box-shadow: 0 1px 0 rgba(42, 23, 18, 0.5);
+  filter: brightness(0.96);
 }
 .btn.mint {
   border-image: var(--frame-petrol) 46 fill / 13px stretch;
@@ -1079,7 +1081,8 @@ button {
   padding: 4px 10px;
 }
 .btn:disabled {
-  filter: grayscale(0.55) brightness(0.92) drop-shadow(0 2px 0 rgba(42, 23, 18, 0.35));
+  filter: grayscale(0.55) brightness(0.92);
+  box-shadow: 0 2px 0 rgba(42, 23, 18, 0.35);
   opacity: 0.8;
 }
 .icon-btn {
@@ -1201,10 +1204,10 @@ button {
 @keyframes glow2 {
   0%,
   100% {
-    filter: drop-shadow(0 4px 0 rgba(42, 23, 18, 0.45)) drop-shadow(0 0 0 rgba(240, 207, 122, 0));
+    box-shadow: 0 4px 0 rgba(42, 23, 18, 0.45), 0 0 0 rgba(240, 207, 122, 0);
   }
   50% {
-    filter: drop-shadow(0 4px 0 rgba(42, 23, 18, 0.45)) drop-shadow(0 0 10px rgba(240, 207, 122, 0.95));
+    box-shadow: 0 4px 0 rgba(42, 23, 18, 0.45), 0 0 18px rgba(240, 207, 122, 0.95);
   }
 }
 
@@ -1413,4 +1416,102 @@ button {
   color: rgba(247, 236, 214, 0.75);
   max-width: 260px;
   text-align: center;
+}
+.ribbon {
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+
+/* ---------------- prestige ---------------- */
+.crown-btn {
+  position: relative;
+}
+.crown-btn.ready {
+  animation: crownPulse 1.6s ease-in-out infinite;
+}
+@keyframes crownPulse {
+  0%,
+  100% {
+    box-shadow: 0 4px 0 rgba(42, 23, 18, 0.45), 0 0 0 rgba(240, 207, 122, 0);
+  }
+  50% {
+    box-shadow: 0 4px 0 rgba(42, 23, 18, 0.45), 0 0 16px rgba(240, 207, 122, 0.9);
+  }
+}
+.crown-badge {
+  position: absolute;
+  right: -12px;
+  top: -12px;
+  min-width: 26px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #a83443, #7d1f2c);
+  border: 2px solid #f0cf7a;
+  color: #f7ecd6;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+.prestige-hero {
+  text-align: center;
+  margin-bottom: 10px;
+}
+.prestige-hero .crowns-now {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.crowns-gain {
+  margin: 6px 0 4px;
+}
+.prestige-locked {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 10px 0;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.crown-progress small {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.crown-progress .bar {
+  height: 10px;
+}
+.keep-lose {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 12px 0 6px;
+}
+.keep-lose ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.keep-lose li + li {
+  margin-top: 3px;
+}
+.brand-facade {
+  display: block;
+  width: 150px;
+  height: 150px;
+  margin: -4px auto 2px;
+  object-fit: cover;
+  -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 62%, transparent 100%);
+  mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 62%, transparent 100%);
+  pointer-events: none;
+  user-select: none;
+}
+.dialog .brand-facade {
+  position: relative;
+  width: 170px;
+  height: 170px;
 }

@@ -17,6 +17,7 @@ export type UiEvent =
   | { type: 'hire'; managerId: string }
   | { type: 'skill'; managerId: string; station: StationId }
   | { type: 'tap'; station: StationId; result: A.TapResult }
+  | { type: 'brandSold'; crowns: number }
   | { type: 'fail'; station?: StationId };
 
 /** Rolling window of real sales for the "€/s" display. */
@@ -314,6 +315,18 @@ export class GameStore {
     }
     this.notify(true);
     return r;
+  }
+
+  /** "Marke verkaufen": crowns for a fresh start (see actions.sellBrand). */
+  sellBrand(): number {
+    const crowns = A.sellBrand(this.state);
+    if (crowns > 0) {
+      this.income.reset();
+      this.emit({ type: 'brandSold', crowns });
+      this.persist(true);
+    } else this.emit({ type: 'fail' });
+    this.notify(true);
+    return crowns;
   }
 
   claimQuest(): number {

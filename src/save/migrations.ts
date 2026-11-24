@@ -5,11 +5,21 @@
  *
  * Version history
  *   1 – first public vertical slice (Manufaktur, 5 Etagen)
+ *   2 – prestige "Marke verkaufen" (crowns), manager home stations, smooth tap time
  */
 export type Migration = (data: Record<string, unknown>) => Record<string, unknown>;
 
 export const MIGRATIONS: Record<number, Migration> = {
-  // 1: (d) => ({ ...d, research: { points: '0', nodes: [] } }),  // example for v2
+  1: (d) => {
+    const stats = (d.stats ?? {}) as Record<string, unknown>;
+    return {
+      ...d,
+      // A v1 player has never sold the brand: the current run started with the game.
+      prestige: { crowns: 0, runs: 0, runStartEarned: '0', runStartPlay: 0, bestFloor5: null },
+      managers: Array.isArray(d.managers) ? d.managers.map((m) => ({ ...(m as object), home: null })) : d.managers,
+      stats,
+    };
+  },
 };
 
 export function migrate(

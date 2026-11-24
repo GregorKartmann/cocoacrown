@@ -152,10 +152,40 @@ class AudioEngine {
 
 export const audio = new AudioEngine();
 
+/**
+ * iPhone Safari has no Vibration API. Since iOS 18, toggling a native
+ * `<input type="checkbox" switch>` gives a short system haptic, so taps can
+ * still be felt. Older iOS versions simply ignore it.
+ */
+let iosSwitch: HTMLLabelElement | null = null;
+let lastIosHaptic = 0;
+function iosHaptic() {
+  const now = performance.now();
+  if (now - lastIosHaptic < 60) return;
+  lastIosHaptic = now;
+  if (!iosSwitch) {
+    const label = document.createElement('label');
+    label.setAttribute('aria-hidden', 'true');
+    label.style.cssText = 'position:fixed;left:-100px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.setAttribute('switch', '');
+    input.tabIndex = -1;
+    label.appendChild(input);
+    document.body.appendChild(label);
+    iosSwitch = label;
+  }
+  iosSwitch.click();
+}
+
+export const canVibrate = typeof navigator !== 'undefined' && 'vibrate' in navigator;
+export const isIos = typeof navigator !== 'undefined' && /iphone|ipad|ipod/i.test(navigator.userAgent);
+
 export function haptic(enabled: boolean, ms = 8) {
   if (!enabled) return;
   try {
-    if ('vibrate' in navigator) navigator.vibrate(ms);
+    if (canVibrate) navigator.vibrate(ms);
+    else if (isIos) iosHaptic();
   } catch {
     /* unsupported */
   }

@@ -351,8 +351,9 @@ export class World {
     if (this.dragging) return;
     const r = this.store.tap(id);
     this.rippleList.push({ x: this.towerX + x, y, t: 0 });
+    if (this.rippleList.length > 6) this.rippleList.shift();
     if (r === 'started' || r === 'boosted') {
-      this.fx.spawn('spark', this.towerX + x, y, r === 'started' ? 5 : 3, { up: 110 });
+      this.fx.spawn('spark', this.towerX + x, y, r === 'started' ? 5 : 2, { up: 110 });
       this.ui.feedback('tap');
     } else if (r === 'limited') this.ui.feedback('tap');
     else this.ui.feedback('fail');
@@ -407,9 +408,10 @@ export class World {
     const s = store.state;
     const unlocked = s.floors.filter((f) => f.unlocked).length;
     if (unlocked !== this.layout.floors) {
+      const grew = unlocked > this.layout.floors;
       this.relayout(true);
       const fv = this.floors[unlocked - 1];
-      this.fx.spawn('confetti', this.towerX + 160, fv.y + 60, 40, { up: 260, spread: 3.2, tint: [P.brassLight, P.burgundyLight, P.ivory, P.brass] });
+      if (grew) this.fx.spawn('confetti', this.towerX + 160, fv.y + 60, 40, { up: 260, spread: 3.2, tint: [P.brassLight, P.burgundyLight, P.ivory, P.brass] });
     }
 
     this.consumeEvents();
@@ -524,14 +526,15 @@ export class World {
       const st = floorStats(s, i);
       const fv = this.floors[i];
       if (f.running && !f.stalled) anyRunning = true;
-      fv.update(dt, 1 / st.cycle);
+      fv.update(dt, rushFactor(f.rush) / st.cycle);
     }
     // lift: extrapolate position inside the current sim step for smooth motion
     const L0 = s.lift;
     const ls = liftStats(s);
     let pos = L0.pos;
-    if (L0.phase === 'up') pos = Math.min(Math.floor(L0.pos + 1e-6) + 1, L0.pos + ddt / ls.floorTime);
-    else if (L0.phase === 'down') pos = Math.max(0, L0.pos - ddt / ls.floorTime);
+    const lddt = ddt * rushFactor(L0.rush);
+    if (L0.phase === 'up') pos = Math.min(Math.floor(L0.pos + 1e-6) + 1, L0.pos + lddt / ls.floorTime);
+    else if (L0.phase === 'down') pos = Math.max(0, L0.pos - lddt / ls.floorTime);
     const liftSpeed = (pos - this.lastLiftPos) / Math.max(dt, 1e-3);
     this.lastLiftPos = pos;
     this.lift.sync(this.layout.liftY(pos), ratio(L0.cargo, ls.capacity), this.flowCache.bottleneck === 'lift' && this.layout.floors > 0 && !!s.lift.managerId);
@@ -544,6 +547,7 @@ export class World {
     const groundBase = this.layout.groundY + L.groundH;
     const exitX = -this.towerX - 90;
     const half = sh.roundTrip / 2;
+    const vddt = ddt * rushFactor(s.ship.rush);
     for (let k = 0; k < this.vans.length; k++) {
       const v = this.vans[k];
       const vs = s.ship.vans[k];
@@ -560,7 +564,7 @@ export class World {
       let y = parkedY;
       let speed = 0;
       if (vs.phase === 'out') {
-        const p = Math.min(1, 1 - Math.max(0, vs.timer - ddt) / half);
+        const p = Math.min(1, 1 - Math.max(0, vs.timer - vddt) / half);
         const lane = Math.min(1, p / 0.15);
         y = parkedY + (outY - parkedY) * lane;
         const e = p * p;
@@ -568,7 +572,7 @@ export class World {
         v.facingLeft = true;
         speed = 400 * p;
       } else if (vs.phase === 'back') {
-        const p = Math.min(1, 1 - Math.max(0, vs.timer - ddt) / half);
+        const p = Math.min(1, 1 - Math.max(0, vs.timer - vddt) / half);
         const lane = Math.max(0, (p - 0.85) / 0.15);
         y = inY + (parkedY - inY) * lane;
         const e = 1 - (1 - p) * (1 - p);
@@ -615,4 +619,11 @@ export class World {
     this.screenFx.update(dt);
     this.screenFloaters.update(dt);
   }
+}
+
+/** Speed factor a station runs at while tap time is being paid out (matches sim.payRush). */
+function rushFactor(rush: number): number {
+  if (rush <= 0) return 1;
+  const extra = Math.min(rush, BALANCE.dt * (BALANCE.tap.maxSpeed - 1));
+  return 1 + extra / BALANCE.dt;
 }

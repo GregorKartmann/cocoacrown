@@ -32,6 +32,10 @@ export interface BotOptions {
   catchGolden?: boolean;
   /** Seconds between decisions (player attention). */
   thinkEvery?: number;
+  /** Continue an existing game (e.g. after a brand sale) instead of starting fresh. */
+  initial?: GameState;
+  /** Stop early once this returns true (t = seconds since this run started). */
+  stopWhen?: (s: GameState, t: number) => boolean;
 }
 
 export interface BotEvent {
@@ -42,7 +46,7 @@ export interface BotEvent {
 export interface BotResult {
   state: GameState;
   events: BotEvent[];
-  samples: { t: number; income: number; money: number; bottleneck: string; levels: string }[];
+  samples: { t: number; income: number; money: number; earned: number; bottleneck: string; levels: string }[];
   purchases: number[];
   firstTime: Record<string, number>;
   incomeAt: (t: number) => number;
@@ -54,7 +58,8 @@ export interface BotResult {
 type Option = { kind: 'upgrade'; station: StationId } | { kind: 'unlock'; floor: number };
 
 export function runBot(opts: BotOptions): BotResult {
-  const s = createGame(0, opts.seed ?? 4242);
+  const s = opts.initial ?? createGame(0, opts.seed ?? 4242);
+  const t0 = s.simTime;
   const events: BotEvent[] = [];
   const samples: BotResult['samples'] = [];
   const purchases: number[] = [];
@@ -78,13 +83,14 @@ export function runBot(opts: BotOptions): BotResult {
 
   for (let k = 0; k < steps; k++) {
     step(s, BALANCE.dt, ctx);
-    const t = s.simTime;
+    const t = s.simTime - t0;
     if (opts.catchGolden !== false && s.golden.active && s.golden.active.remaining < BALANCE.golden.lifetime - 2) {
       const r = catchGolden(s);
       if (r) mark('golden', t);
     }
     if (t + 1e-9 < nextThink) continue;
     nextThink = t + think;
+    if (opts.stopWhen?.(s, t)) break;
     if (incomeLog.length === 0 || t - incomeLog[incomeLog.length - 1].t >= 5) incomeLog.push({ t, v: analyzeFlow(s).income.toNumber() });
     for (const q of QUESTS) if (questReady[q.id] === undefined && q.progress(s) >= q.target) questReady[q.id] = t;
     {
@@ -229,6 +235,7 @@ export function runBot(opts: BotOptions): BotResult {
         t,
         income: f.income.toNumber(),
         money: s.money.toNumber(),
+        earned: s.stats.totalEarned.sub(s.prestige.runStartEarned).toNumber(),
         bottleneck: f.bottleneck,
         levels: `${s.floors.map((x) => (x.unlocked ? x.level : '-')).join('/')} L${s.lift.level} V${s.ship.level}`,
       });
