@@ -12,6 +12,9 @@ import { catchUp, type OfflineReport } from '../sim/offline';
 import { step } from '../sim/sim';
 import type { BuyMode, GameState, ManagerCategory, Settings, SimEvent, StationId } from '../sim/types';
 import { SaveManager, exportSaveText, importSaveText } from '../save/storage';
+import * as W from '../sim/winter';
+import type { ShopItem } from '../config/winter';
+import { eventNow } from './clock';
 
 export type UiEvent =
   | { type: 'toast'; text: string; tone?: 'info' | 'good' | 'warn' | 'gold' }
@@ -30,6 +33,15 @@ export type UiEvent =
   | { type: 'dailyDay'; streak: number; rewards: GoalReward[] }
   | { type: 'claimed'; reward: GoalReward }
   | { type: 'newDay' }
+  | { type: 'winterBatch'; floor: number; stars: number }
+  | { type: 'winterTap'; floor: number; result: W.WinterTap }
+  | { type: 'winterUpgrade'; floor: number; milestone: boolean }
+  | { type: 'winterBuilt'; floor: number }
+  | { type: 'doorOpened'; day: number }
+  | { type: 'doorClaimed'; day: number; managerId: string | null }
+  | { type: 'winterBought'; id: ShopItem['id'] }
+  | { type: 'winterStars'; amount: number; reason: 'daily' | 'offline' }
+  | { type: 'adventDay'; day: number }
   | { type: 'fail'; station?: StationId };
 
 /** Rolling window of real sales for the "€/s" display. */
@@ -95,6 +107,8 @@ export class GameStore {
   /** Achievements already announced (claimable ones at load are not re-announced). */
   private announced = new Set<string>();
   private lastGoalCheck = 0;
+  /** Phase of the Advent event on the device's local calendar. */
+  advent: W.AdventPhase;
 
   constructor(
     state: GameState,
@@ -103,13 +117,17 @@ export class GameStore {
     this.state = state;
     for (const a of G.claimableAchievements(state)) this.announced.add(a.id);
     G.refreshDaily(state, Date.now());
+    this.advent = W.adventPhase(eventNow());
+    W.syncSeason(state, this.advent);
   }
 
   /* ---------------- lifecycle ---------------- */
 
   /** Called once after loading: credit the time since the last save. */
   resume(now = Date.now()): void {
+    const from = this.state.lastWallTime;
     const report = catchUp(this.state, now);
+    this.creditWinter(from, now);
     if (report && report.awaySeconds >= BALANCE.offline.reportThresholdSeconds && report.earned.gt(0)) this.offlineReport = report;
     this.lastPerf = performance.now();
     this.acc = 0;
@@ -146,7 +164,10 @@ export class GameStore {
       n++;
     }
     if (n === 20) this.acc = 0;
-    if (n > 0) this.bumpDaily('activeSeconds', n * dt);
+    if (n > 0) {
+      this.bumpDaily('activeSeconds', n * dt);
+      if (W.eventRunning(this.advent)) this.tickWinter(n * dt);
+    }
     if (nowPerf - this.lastGoalCheck > 1000) this.checkGoals(nowPerf);
     this.alpha = this.acc / dt;
     // Wall clock of the simulated present (used for offline credit).
@@ -157,7 +178,10 @@ export class GameStore {
 
   /** Visibility returned or long freeze: credit the elapsed time like offline time. */
   handleAbsence(): void {
+    const from = this.state.lastWallTime;
     const report = catchUp(this.state, Date.now());
+    this.refreshAdvent();
+    this.creditWinter(from, Date.now());
     if (G.refreshDaily(this.state, Date.now())) this.emit({ type: 'newDay' });
     this.acc = 0;
     this.lastPerf = performance.now();
@@ -213,6 +237,7 @@ export class GameStore {
     s.lastWallTime = Date.now();
     s.settings = { ...this.state.settings };
     this.state = s;
+    W.syncSeason(this.state, this.advent);
     this.saves?.saveSync(this.state);
     this.simEvents = [];
     this.income.reset();
@@ -224,6 +249,7 @@ export class GameStore {
   resetGame(): void {
     const settings = this.state.settings;
     this.state = createGame(Date.now(), undefined, settings);
+    W.syncSeason(this.state, this.advent);
     this.saves?.saveSync(this.state);
     this.simEvents = [];
     this.income.reset();
@@ -371,6 +397,7 @@ export class GameStore {
   /** New calendar day and newly reached achievements (about once a second). */
   private checkGoals(nowPerf: number): void {
     this.lastGoalCheck = nowPerf;
+    this.refreshAdvent();
     if (G.refreshDaily(this.state, Date.now())) {
       this.emit({ type: 'newDay' });
       this.persist(false);
@@ -396,6 +423,12 @@ export class GameStore {
     const r = G.claimDaily(this.state, index);
     if (r) {
       this.emit({ type: 'claimed', reward: r });
+      const stars = W.dailyGoalStars(this.state, this.advent);
+      if (stars > 0) {
+        this.state.winter.stars += stars;
+        this.state.winter.earned += stars;
+        this.emit({ type: 'winterStars', amount: stars, reason: 'daily' });
+      }
       this.persist(false);
     } else this.emit({ type: 'fail' });
     this.notify(true);
@@ -459,6 +492,95 @@ export class GameStore {
 
   flow() {
     return analyzeFlow(this.state);
+  }
+
+  /* ---------------- Advent-Event ---------------- */
+
+  /** Re-reads the calendar; starts a new season and announces a new door. */
+  refreshAdvent(): void {
+    const before = this.advent;
+    const p = W.adventPhase(eventNow());
+    this.advent = p;
+    const reset = W.syncSeason(this.state, p);
+    const changed = reset || before.kind !== p.kind || (before.kind === 'active' && p.kind === 'active' && before.day !== p.day);
+    if (!changed) return;
+    if (p.kind === 'active' && (before.kind !== 'active' || before.day !== p.day)) this.emit({ type: 'adventDay', day: p.day });
+    this.persist(false);
+    this.notify(true);
+  }
+
+  private creditWinter(from: number, to: number): void {
+    if (!W.eventRunning(this.advent)) return;
+    const off = eventNow() - Date.now();
+    const t = W.creditWinterAbsence(this.state, from + off, to + off);
+    if (t.stars > 0 && (to - from) / 1000 >= BALANCE.offline.reportThresholdSeconds) this.emit({ type: 'winterStars', amount: t.stars, reason: 'offline' });
+  }
+
+  private tickWinter(seconds: number): void {
+    const t = W.advanceWinter(this.state, seconds);
+    if (t.stars <= 0) return;
+    t.batches.forEach((n, floor) => {
+      if (n > 0) this.emit({ type: 'winterBatch', floor, stars: n * W.batchStars(this.state, floor) });
+    });
+  }
+
+  winterTap(floor: number): W.WinterTap {
+    const r = W.tapWinterFloor(this.state, floor, this.advent);
+    this.emit({ type: 'winterTap', floor, result: r });
+    this.notify(true);
+    return r;
+  }
+
+  winterUpgrade(floor: number): boolean {
+    const before = this.state.winter.floors[floor]?.level ?? 0;
+    const ok = W.upgradeWinterFloor(this.state, floor, this.advent);
+    if (ok) {
+      const after = this.state.winter.floors[floor].level;
+      this.emit({ type: 'winterUpgrade', floor, milestone: W.nextDoubling(before) <= after });
+      this.persist(false);
+    } else this.emit({ type: 'fail' });
+    this.notify(true);
+    return ok;
+  }
+
+  winterBuild(floor: number): boolean {
+    const ok = W.buildWinterFloor(this.state, floor, this.advent);
+    if (ok) {
+      this.emit({ type: 'winterBuilt', floor });
+      this.persist(true);
+    } else this.emit({ type: 'fail' });
+    this.notify(true);
+    return ok;
+  }
+
+  openDoor(day: number): boolean {
+    const ok = W.openDoor(this.state, day, this.advent);
+    if (ok) {
+      this.emit({ type: 'doorOpened', day });
+      this.persist(false);
+    } else this.emit({ type: 'fail' });
+    this.notify(true);
+    return ok;
+  }
+
+  claimDoor(day: number): W.DoorPayout | null {
+    const r = W.claimDoor(this.state, day, this.advent);
+    if (r) {
+      this.emit({ type: 'doorClaimed', day, managerId: r.manager?.id ?? null });
+      this.persist(true);
+    } else this.emit({ type: 'fail' });
+    this.notify(true);
+    return r;
+  }
+
+  buyWinter(id: ShopItem['id']): boolean {
+    const item = W.buyShopItem(this.state, id, this.advent);
+    if (item) {
+      this.emit({ type: 'winterBought', id });
+      this.persist(true);
+    } else this.emit({ type: 'fail' });
+    this.notify(true);
+    return !!item;
   }
 }
 

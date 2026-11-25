@@ -18,6 +18,10 @@ import { rewardText } from '../sim/goals';
 import { BrandSoldDialog, PrestigeSheet } from './components/PrestigeSheet';
 import { ResearchSheet } from './components/ResearchSheet';
 import { LAB_FLOOR, RESEARCH_BY_ID } from '../config/research';
+import { WinterButton, WinterSheet } from './components/WinterSheet';
+import { DOORS, SHOP, WINTER_FLOORS } from '../config/winter';
+import { formatNumber } from '../core/format';
+import { setEventDate } from '../game/clock';
 
 type SheetState =
   | { kind: 'station'; id: StationId }
@@ -28,6 +32,7 @@ type SheetState =
   | { kind: 'stats' }
   | { kind: 'prestige' }
   | { kind: 'research' }
+  | { kind: 'winter' }
   | { kind: 'settings' };
 
 interface BeforeInstallPromptEvent extends Event {
@@ -45,6 +50,7 @@ export function App({ store, updateAvailable, onUpdate }: { store: GameStore; up
   const [reveal, setReveal] = useState<string | null>(null);
   const [sold, setSold] = useState<number | null>(null);
   const [installEvt, setInstallEvt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [winterPos, setWinterPos] = useState<{ top: number; right: number } | null>(null);
   const toastId = useRef(0);
 
   const toast = useCallback((text: string, tone?: string) => {
@@ -100,6 +106,12 @@ export function App({ store, updateAvailable, onUpdate }: { store: GameStore; up
         },
         focus: (id: StationId) => world.focus(id),
         world,
+        advent: (date: string) => {
+          const ok = setEventDate(date);
+          store.refreshAdvent();
+          store.notify(true);
+          return ok;
+        },
       };
     }
     return () => {
@@ -198,6 +210,53 @@ export function App({ store, updateAvailable, onUpdate }: { store: GameStore; up
           setSheet(null);
           setSold(e.crowns);
           break;
+        case 'winterTap':
+          if (e.result !== 'nothing') {
+            audio.play('tap');
+            haptic(hap, 6);
+          }
+          break;
+        case 'winterUpgrade':
+          audio.play(e.milestone ? 'milestone' : 'upgrade');
+          haptic(hap, e.milestone ? 30 : 10);
+          if (e.milestone) toast(`${WINTER_FLOORS[e.floor].name}: doppelte Zimtsterne!`, 'gold');
+          break;
+        case 'winterBuilt':
+          audio.play('unlock');
+          haptic(hap, 40);
+          toast(`Neue Etage: ${WINTER_FLOORS[e.floor].name}!`, 'gold');
+          break;
+        case 'doorOpened':
+          audio.play('golden');
+          haptic(hap, 25);
+          break;
+        case 'doorClaimed': {
+          audio.play('claim');
+          haptic(hap, 30);
+          const d = DOORS.find((x) => x.day === e.day);
+          if (d) toast(`Türchen ${e.day}: ${d.title}`, 'gold');
+          setBump((b) => b + 1);
+          break;
+        }
+        case 'winterBought': {
+          audio.play('claim');
+          haptic(hap, 15);
+          const it = SHOP.find((x) => x.id === e.id);
+          if (it) toast(`Wintermarkt: ${it.name}`, 'good');
+          break;
+        }
+        case 'winterStars':
+          toast(
+            e.reason === 'daily'
+              ? `Tagesziel: +${formatNumber(e.amount, n, 0)} Zimtsterne`
+              : `Lebkuchen-Manufaktur: +${formatNumber(e.amount, n, 0)} Zimtsterne, während du weg warst`,
+            'gold',
+          );
+          break;
+        case 'adventDay':
+          audio.play('milestone');
+          toast(e.day <= 24 ? `Türchen ${e.day} ist offen!` : `Bonus-Türchen ${e.day} ist offen!`, 'gold');
+          break;
         case 'fail':
           audio.play('fail');
           haptic(hap, 20);
@@ -270,6 +329,24 @@ export function App({ store, updateAvailable, onUpdate }: { store: GameStore; up
     };
   }, []);
 
+  // event button sits under the top bar, at its right edge
+  useEffect(() => {
+    const el = topRef.current;
+    if (!el) return;
+    const place = () => {
+      const r = el.getBoundingClientRect();
+      setWinterPos({ top: r.bottom + 8, right: Math.max(4, window.innerWidth - r.right) });
+    };
+    place();
+    const ro = new ResizeObserver(place);
+    ro.observe(el);
+    window.addEventListener('resize', place);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', place);
+    };
+  }, []);
+
   const close = useCallback(() => setSheet(null), []);
   const openStation = useCallback((id: StationId) => {
     setSheet({ kind: 'station', id });
@@ -281,6 +358,7 @@ export function App({ store, updateAvailable, onUpdate }: { store: GameStore; up
       <div className="app">
         <div className="world-host" ref={hostRef} data-testid="world" />
         <TopBar onSettings={() => setSheet({ kind: 'settings' })} onStation={openStation} onPrestige={() => setSheet({ kind: 'prestige' })} bump={bump} refEl={topRef} />
+        {winterPos && <WinterButton onOpen={() => setSheet({ kind: 'winter' })} style={{ top: winterPos.top, right: winterPos.right }} />}
         <div className="bottom-ui" ref={bottomRef}>
           <QuestCard onFocus={(id) => worldRef.current?.focus(id)} onClaim={() => store.claimQuest()} onOpenGoals={() => setSheet({ kind: 'quests' })} />
           <BottomNav
@@ -314,6 +392,7 @@ export function App({ store, updateAvailable, onUpdate }: { store: GameStore; up
         {sheet?.kind === 'stats' && <StatsSheet onClose={close} onPrestige={() => setSheet({ kind: 'prestige' })} />}
         {sheet?.kind === 'prestige' && <PrestigeSheet onClose={close} />}
         {sheet?.kind === 'research' && <ResearchSheet onClose={close} />}
+        {sheet?.kind === 'winter' && <WinterSheet onClose={close} />}
         {sheet?.kind === 'settings' && (
           <SettingsSheet
             onClose={close}

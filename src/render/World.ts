@@ -12,6 +12,8 @@ import { FloatingTexts, Particles } from './fx';
 import { computeLayout, L, type WorldLayout } from './layout';
 import { P } from './palette';
 import { Landscape, Sky } from './scenery';
+import { Snowfall, WinterDecor } from './winterDecor';
+import { visibleDecor } from '../sim/winter';
 import { ConstructionView, FloorView, GroundView, LiftView, RoofView, Van, vanSlotX, type Fx } from './views';
 
 export interface WorldUi {
@@ -92,6 +94,9 @@ export class World {
   private lastLiftPos = 0;
   private destroyed = false;
   private initialScrollDone = false;
+  private decor = new WinterDecor();
+  private snow = new Snowfall();
+  private decorKey = '';
 
   async init(host: HTMLElement, store: GameStore, ui: WorldUi) {
     this.store = store;
@@ -147,10 +152,10 @@ export class World {
       this.floors.push(fv);
     }
 
-    this.tower.addChild(this.roof, this.construction, ...this.floors, this.ground, this.lift);
+    this.tower.addChild(this.roof, this.construction, ...this.floors, this.ground, this.lift, this.decor);
     this.world.addChild(this.landscape.back, this.tower, this.landscape.front, this.vanLayer, this.fx, this.floaters, this.ripples);
     this.golden = new GoldenBean(() => this.catchGolden());
-    this.app.stage.addChild(this.sky, this.world, this.screenFx, this.screenFloaters, this.golden);
+    this.app.stage.addChild(this.sky, this.world, this.snow, this.screenFx, this.screenFloaters, this.golden);
 
     // input: scrolling is handled on the DOM canvas so the Pixi stage stays
     // passive (an interactive stage would make every graphic hit-testable).
@@ -215,6 +220,7 @@ export class World {
     this.towerX = leftInset / this.scale + ((w - leftInset) / this.scale - L.towerW) / 2 + 6;
     this.world.scale.set(this.scale);
     this.sky.resize(w, h);
+    this.snow.resize(w, h);
 
     const s = this.store.state;
     const unlocked = s.floors.filter((f) => f.unlocked).length;
@@ -237,12 +243,27 @@ export class World {
     this.landscape.back.x = this.towerX;
     this.landscape.front.x = this.towerX;
 
+    this.applyDecor(true);
+
     const b = this.bounds();
     if (!this.initialScrollDone) {
       this.scrollY = b.max;
       this.initialScrollDone = true;
     } else if (keepBottom) this.scrollY = b.max - fromBottom;
     this.scrollY = Math.max(b.min - 40, Math.min(b.max + 40, this.scrollY));
+  }
+
+  /** Winter decoration from the Advent calendar (December, setting on). */
+  private applyDecor(force: boolean) {
+    const set = visibleDecor(this.store.state, this.store.advent);
+    const key = [...set].sort().join(',');
+    if (!force && key === this.decorKey) return;
+    this.decorKey = key;
+    this.decor.apply(set, this.layout, this.roof.y);
+    this.roof.setSnow(set.has('schneedach'));
+    this.ground.setGarland(set.has('girlande'));
+    this.snow.visible = set.has('schneefall');
+    this.sky.setWinter(set.has('schneefall'));
   }
 
   /** Smoothly bring a station into view. */
@@ -419,6 +440,7 @@ export class World {
     if (this.hudTimer <= 0) {
       this.hudTimer = 0.1;
       this.syncHud();
+      this.applyDecor(false);
     }
     this.animate(dt);
     this.updateScroll(dt);
@@ -539,6 +561,8 @@ export class World {
     this.lastLiftPos = pos;
     this.lift.sync(this.layout.liftY(pos), ratio(L0.cargo, ls.capacity), this.flowCache.bottleneck === 'lift' && this.layout.floors > 0 && !!s.lift.managerId);
     this.lift.update(dt);
+    this.decor.update(dt);
+    this.snow.update(dt);
     this.roof.update(dt, liftSpeed, anyRunning);
     this.construction.update(dt);
     this.ground.update(dt);

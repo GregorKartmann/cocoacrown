@@ -1,3 +1,4 @@
+import { WINTER_MANAGER_NAME } from './winter';
 import type { ManagerBonus, ManagerCategory } from '../sim/types';
 
 /** Player-facing texts and names (German). Kept apart from numbers in balance.ts. */
@@ -69,6 +70,7 @@ const FIGURES: Record<ManagerCategory, { f: string[]; m: string[] }> = {
 
 /** Painted portrait for a manager, chosen from category, the name's gender and the stored look. */
 export function portraitKey(name: string, category: ManagerCategory, variant: number): string {
+  if (name === WINTER_MANAGER_NAME) return 'winter/figuren/weihnachtsmanager_portrait';
   const first = name.split(' ')[0];
   const set = FIGURES[category][FEMALE.has(first) ? 'f' : 'm'];
   return `portraits/${set[Math.abs(variant) % set.length]}`;

@@ -166,12 +166,38 @@ export interface DailyState {
   streakHireGiven: boolean;
 }
 
+export interface WinterFloorState {
+  built: boolean;
+  level: number;
+  /** 0..1 progress of the current batch. */
+  progress: number;
+  running: boolean;
+}
+
+/** Advent-Event „Lebkuchen-Manufaktur“ of one season (see sim/winter.ts). */
+export interface WinterState {
+  /** Year of the season this state belongs to (0 = never played). */
+  season: number;
+  /** Zimtsterne to spend, and earned in this season. */
+  stars: number;
+  earned: number;
+  floors: WinterFloorState[];
+  /** Advent doors opened, and collected (perks and decoration follow from these). */
+  opened: number[];
+  claimed: number[];
+  /** Wintermarkt purchases per item, and the December day of the last one. */
+  shop: Record<string, number>;
+  shopDay: Record<string, number>;
+}
+
 export interface Settings {
   notation: Notation;
   sound: boolean;
   music: boolean;
   haptics: boolean;
   buyMode: BuyMode;
+  /** Winter decoration in the tower during December. */
+  winterDecor: boolean;
 }
 
 export interface GameState {
@@ -199,6 +225,7 @@ export interface GameState {
   /** Rewards waiting to be used: free manager hires and redeemable golden beans. */
   rewards: { freeHires: number; goldenBeans: number };
   daily: DailyState;
+  winter: WinterState;
   rng: number;
   settings: Settings;
 }

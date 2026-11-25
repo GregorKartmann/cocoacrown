@@ -1,12 +1,14 @@
 import { BALANCE } from '../config/balance';
 import { deser, ser } from '../core/num';
 import { SAVE_VERSION, defaultSettings } from '../sim/init';
-import type { BuyMode, GameState, LiftPhase, Manager, ManagerBonus, ManagerCategory, StationId, VanPhase } from '../sim/types';
+import type { BuyMode, GameState, LiftPhase, Manager, ManagerBonus, ManagerCategory, StationId, VanPhase, WinterState } from '../sim/types';
 import { migrate } from './migrations';
 import { RESEARCH_BY_ID, RESEARCH_IDS, type ResearchId } from '../config/research';
 import { defaultResearch } from '../sim/research';
 import { ACHIEVEMENTS, DAILY_BY_ID } from '../config/goals';
 import { localTimeZone } from '../sim/goals';
+import { LAST_DOOR, SHOP } from '../config/winter';
+import { freshWinter } from '../sim/winter';
 
 const ACHIEVEMENT_IDS = new Set(ACHIEVEMENTS.map((a) => a.id));
 function strList(v: unknown): string[] {
@@ -54,6 +56,14 @@ export function toPlain(s: GameState): Record<string, unknown> {
       prevIds: [...s.daily.prevIds],
       floorsDone: [...s.daily.floorsDone],
       stationsTapped: [...s.daily.stationsTapped],
+    },
+    winter: {
+      ...s.winter,
+      floors: s.winter.floors.map((f) => ({ ...f })),
+      opened: [...s.winter.opened],
+      claimed: [...s.winter.claimed],
+      shop: { ...s.winter.shop },
+      shopDay: { ...s.winter.shopDay },
     },
   };
 }
@@ -206,6 +216,7 @@ export function fromPlain(o: Obj): GameState {
   const rewardsRaw = obj(o.rewards ?? {}, 'rewards');
   const dailyRaw = obj(o.daily ?? {}, 'daily');
   const research = obj(o.research ?? {}, 'research');
+  const winterRaw = obj(o.winter ?? {}, 'winter');
   const ranksRaw = obj(research.ranks ?? {}, 'research.ranks');
   const ranks = defaultResearch().ranks;
   for (const id of RESEARCH_IDS) ranks[id] = ranksRaw[id] === undefined ? 0 : int(ranksRaw[id], `research.${id}`, 0, RESEARCH_BY_ID[id].maxRank);
@@ -301,6 +312,7 @@ export function fromPlain(o: Obj): GameState {
       lastCompleteDay: typeof dailyRaw.lastCompleteDay === 'string' ? dailyRaw.lastCompleteDay : '',
       streakHireGiven: dailyRaw.streakHireGiven === true,
     },
+    winter: decodeWinter(winterRaw),
     rng: int(o.rng, 'rng', 0, 4294967295) >>> 0,
     settings: {
       notation: settings.notation === 'scientific' ? 'scientific' : 'short',
@@ -308,10 +320,53 @@ export function fromPlain(o: Obj): GameState {
       music: typeof settings.music === 'boolean' ? settings.music : def.music,
       haptics: typeof settings.haptics === 'boolean' ? settings.haptics : def.haptics,
       buyMode: buyModes.includes(settings.buyMode as BuyMode) ? (settings.buyMode as BuyMode) : def.buyMode,
+      winterDecor: typeof settings.winterDecor === 'boolean' ? settings.winterDecor : def.winterDecor,
     },
   };
   repairReferences(s);
   return s;
+}
+
+function dayList(v: unknown): number[] {
+  const out: number[] = [];
+  if (!Array.isArray(v)) return out;
+  for (const x of v) if (Number.isInteger(x) && x >= 1 && x <= LAST_DOOR && !out.includes(x)) out.push(x);
+  return out;
+}
+
+function decodeWinter(w: Obj): WinterState {
+  const fresh = freshWinter(0);
+  const floorsRaw = Array.isArray(w.floors) ? w.floors : [];
+  const floors = fresh.floors.map((def, i) => {
+    const f = floorsRaw[i] && typeof floorsRaw[i] === 'object' ? (floorsRaw[i] as Obj) : {};
+    return {
+      built: i === 0 ? true : f.built === true,
+      level: f.level === undefined ? def.level : int(f.level, 'winter.level', 1, 10000),
+      progress: f.progress === undefined ? 0 : num(f.progress, 'winter.progress', 0, 1),
+      running: f.running === true,
+    };
+  });
+  const shopRaw = w.shop && typeof w.shop === 'object' && !Array.isArray(w.shop) ? (w.shop as Obj) : {};
+  const dayRaw = w.shopDay && typeof w.shopDay === 'object' && !Array.isArray(w.shopDay) ? (w.shopDay as Obj) : {};
+  const shop: Record<string, number> = {};
+  const shopDay: Record<string, number> = {};
+  for (const item of SHOP) {
+    if (shopRaw[item.id] !== undefined) shop[item.id] = int(shopRaw[item.id], 'winter.shop', 0, item.max);
+    if (dayRaw[item.id] !== undefined) shopDay[item.id] = int(dayRaw[item.id], 'winter.shopDay', 0, LAST_DOOR);
+  }
+  const claimed = dayList(w.claimed);
+  const opened = dayList(w.opened);
+  for (const d of claimed) if (!opened.includes(d)) opened.push(d);
+  return {
+    season: w.season === undefined ? 0 : int(w.season, 'winter.season', 0, 9999),
+    stars: w.stars === undefined ? 0 : num(w.stars, 'winter.stars', 0, 1e300),
+    earned: w.earned === undefined ? 0 : num(w.earned, 'winter.earned', 0, 1e300),
+    floors,
+    opened,
+    claimed,
+    shop,
+    shopDay,
+  };
 }
 
 /** Makes manager ↔ station links consistent even if a save was edited. */

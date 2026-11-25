@@ -4,7 +4,7 @@
 
 Der Branch `gh-pages` enthält den fertigen Build (`npm run build` → `dist/`).
 
-Idle-Tycoon-Spiel als Webapp und installierbare PWA. Version 0.6.0 mit gemaltem Asset-Pack, Prestige („Marke verkaufen“ gegen Kronen), Rezeptlabor (Forschung), Erfolgen und Tageszielen: die Manufaktur mit acht Produktionsetagen, Lastenaufzug, Lieferwagen, Managern, Aufträgen, Goldener Kakaobohne, Offline-Progression und lokalen Spielständen.
+Idle-Tycoon-Spiel als Webapp und installierbare PWA. Version 0.7.0 mit gemaltem Asset-Pack, Prestige („Marke verkaufen“ gegen Kronen), Rezeptlabor (Forschung), Erfolgen, Tageszielen und dem Advent-Event „Lebkuchen-Manufaktur“: die Manufaktur mit acht Produktionsetagen, Lastenaufzug, Lieferwagen, Managern, Aufträgen, Goldener Kakaobohne, Offline-Progression und lokalen Spielständen.
 
 ## Starten
 
@@ -45,7 +45,9 @@ Die Simulation läuft mit 20 Schritten pro Sekunde unabhängig von der Bildrate.
 
 ## Debug
 
-`?debug=1` an die URL hängen: `window.__cc` bietet `store`, `positions()`, `give(betrag)` und `focus(station)` für Tests.
+`?debug=1` an die URL hängen: `window.__cc` bietet `store`, `positions()`, `give(betrag)`, `focus(station)` und `advent('2026-12-06')` für Tests.
+
+Advent-Event testen: `?debug=1&advent=2026-12-06` (optional mit Uhrzeit `2026-12-06T23:59`) stellt die Event-Uhr auf dieses lokale Datum. Ohne Debug gilt immer die Uhr des Geräts in seiner Ortszeit: November Vorschau, 1.–24. Dezember je ein neues Türchen um Mitternacht, 25./26. Bonus-Türchen, ab 27. Dezember beendet. Logik in `src/sim/winter.ts`, Zahlen und Türchen in `src/config/winter.ts`.
 
 ## Grafiken aktualisieren
 
@@ -60,4 +62,5 @@ Danach das Erweiterungspaket (Etagen 6–8, Rezeptlabor) ergänzen – es schrei
 ```bash
 python3 -I scripts/prepare-expansion.py <Pfad/zu/Cocoa_Crown_Erweiterung> .
 python3 -I scripts/prepare-goals.py <Pfad/zu/Cocoa_Crown_Erfolge> .
+python3 -I scripts/prepare-winter.py <Pfad/zu/Cocoa_Crown_Winter_Pack> .
 ```

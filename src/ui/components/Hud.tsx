@@ -13,7 +13,7 @@ import { IconBolt, IconBox, IconClose, IconCoin, IconCrown, IconFactory, IconGea
 
 /* ------------------------------------------------------------------ */
 
-export function Sheet({ title, sub, onClose, children, icon }: { title: string; sub?: string; onClose: () => void; children: ReactNode; icon?: ReactNode }) {
+export function Sheet({ title, sub, onClose, children, icon, className }: { title: string; sub?: string; onClose: () => void; children: ReactNode; icon?: ReactNode; className?: string }) {
   // A sheet opened by a tap in the game world must not receive that tap's
   // follow-up "click" (ghost click), so it ignores input for a moment.
   const [armed, setArmed] = useState(false);
@@ -29,7 +29,7 @@ export function Sheet({ title, sub, onClose, children, icon }: { title: string; 
   return (
     <>
       <div className="sheet-backdrop" onClick={() => armed && onClose()} />
-      <div className="sheet panel" role="dialog" aria-label={title} style={armed ? undefined : { pointerEvents: 'none' }}>
+      <div className={`sheet panel ${className ?? ''}`} role="dialog" aria-label={title} style={armed ? undefined : { pointerEvents: 'none' }}>
         <div className="sheet-head">
           {icon}
           <h2>

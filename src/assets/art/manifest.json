@@ -634,5 +634,129 @@
  "requisiten/wanduhr": {
   "h": 260,
   "w": 242
+ },
+ "winter/advent/kalender_hintergrund": {
+  "h": 1024,
+  "w": 819
+ },
+ "winter/advent/tuer_abgeholt": {
+  "h": 116,
+  "w": 256
+ },
+ "winter/advent/tuer_geoeffnet": {
+  "h": 116,
+  "w": 256
+ },
+ "winter/advent/tuer_gesperrt": {
+  "h": 116,
+  "w": 256
+ },
+ "winter/advent/tuer_verfuegbar": {
+  "h": 116,
+  "w": 256
+ },
+ "winter/deko/fabrikdach_schnee": {
+  "h": 294,
+  "w": 644
+ },
+ "winter/deko/lichterkette_bogen": {
+  "h": 144,
+  "w": 644
+ },
+ "winter/deko/lichterkette_turm": {
+  "h": 501,
+  "w": 41
+ },
+ "winter/deko/tannengirlande": {
+  "h": 178,
+  "w": 644
+ },
+ "winter/deko/weihnachtsbaum": {
+  "h": 516,
+  "w": 394
+ },
+ "winter/effekte/goldglanz": {
+  "h": 120,
+  "w": 117
+ },
+ "winter/effekte/schneeflocke": {
+  "h": 120,
+  "w": 105
+ },
+ "winter/figuren/weihnachtsmanager": {
+  "h": 415,
+  "w": 260
+ },
+ "winter/figuren/weihnachtsmanager_portrait": {
+  "h": 217,
+  "w": 240
+ },
+ "winter/hintergruende/baeckerei": {
+  "h": 512,
+  "w": 1024
+ },
+ "winter/hintergruende/verpackung": {
+  "h": 512,
+  "w": 1024
+ },
+ "winter/hintergruende/verzierung": {
+  "h": 512,
+  "w": 1024
+ },
+ "winter/hintergruende/winterstadt": {
+  "h": 810,
+  "w": 1440
+ },
+ "winter/maschinen/festdosen_presse": {
+  "h": 389,
+  "w": 420
+ },
+ "winter/maschinen/glasierstation": {
+  "h": 420,
+  "w": 397
+ },
+ "winter/maschinen/lebkuchenofen": {
+  "h": 420,
+  "w": 334
+ },
+ "winter/oberflaeche/adventsgeschenk": {
+  "h": 200,
+  "w": 185
+ },
+ "winter/oberflaeche/winter_siegel": {
+  "h": 200,
+  "w": 197
+ },
+ "winter/oberflaeche/winterfabrik": {
+  "h": 197,
+  "w": 200
+ },
+ "winter/oberflaeche/zimtstern": {
+  "h": 193,
+  "w": 200
+ },
+ "winter/produkte/adventsdose": {
+  "h": 200,
+  "w": 194
+ },
+ "winter/produkte/gewuerzlebkuchen": {
+  "h": 200,
+  "w": 183
+ },
+ "winter/produkte/lebkuchenherz": {
+  "h": 200,
+  "w": 183
+ },
+ "winter/requisiten/festdosen_wagen": {
+  "h": 281,
+  "w": 300
+ },
+ "winter/requisiten/mehl_und_gewuerze": {
+  "h": 300,
+  "w": 294
+ },
+ "winter/requisiten/trockengestell": {
+  "h": 227,
+  "w": 300
  }
 }

@@ -10,6 +10,8 @@
  *       opens right away if the 3rd floor already stands)
  *   4 – Erfolge, Tagesziele und Serie, Belohnungen; lifetime records for the
  *       achievements are taken from the current game (and the prestige best time)
+ *   5 – Advent-Event „Lebkuchen-Manufaktur“: empty winter state (the season
+ *       starts on the first load in November or December), Winterdeko on
  */
 import { BALANCE } from '../config/balance';
 
@@ -56,6 +58,23 @@ export const MIGRATIONS: Record<number, Migration> = {
     stats.maxFloors = Math.max(1, open.length, reached5 ? 5 : 0);
     // daily state is created on load (time zone of this device)
     return { ...d, stats, goals: { claimed: [] }, rewards: { freeHires: 0, goldenBeans: 0 } };
+  },
+  4: (d) => {
+    const settings = { ...((d.settings ?? {}) as Record<string, unknown>), winterDecor: true };
+    return {
+      ...d,
+      settings,
+      winter: {
+        season: 0,
+        stars: 0,
+        earned: 0,
+        floors: [0, 1, 2].map((i) => ({ built: i === 0, level: 1, progress: 0, running: false })),
+        opened: [],
+        claimed: [],
+        shop: {},
+        shopDay: {},
+      },
+    };
   },
 };
 

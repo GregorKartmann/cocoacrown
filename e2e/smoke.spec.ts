@@ -182,3 +182,39 @@ test('Ziele: drei Tagesziele, Erfolg abholen, Goldene Bohne einlösen', async ({
   expect(st).toEqual({ claimed: ['charges_10'], points: 1, beans: 0, caught: 0, goals: 3 });
   expect(errors).toEqual([]);
 });
+
+test('Advent: Vorschau im November, Türchen nach Gerätedatum, Stand übersteht Neuladen', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/?debug=1&advent=2026-11-28');
+  await expect(page.getByTestId('money')).toBeVisible();
+  await page.waitForTimeout(600);
+  await page.getByTestId('winter-btn').click();
+  await expect(page.getByTestId('wf-0')).toBeVisible();
+  await page.getByTestId('wf-0').click();
+  await page.getByTestId('wtab-calendar').click();
+  await page.getByTestId('door-1').click();
+  await expect(page.getByTestId('door-dialog')).toContainText('Noch verschlossen');
+  await page.getByTestId('door-close').click();
+
+  // 3 December: three doors wait, door 3 brings the Ofenwichtel
+  await page.goto('/?debug=1&advent=2026-12-03');
+  await expect(page.getByTestId('winter-btn')).toContainText('3');
+  await page.getByTestId('winter-btn').click();
+  for (const d of [1, 2, 3]) {
+    await page.getByTestId(`door-${d}`).click();
+    await page.getByTestId('door-claim').click();
+    await page.getByTestId('door-close').click();
+  }
+  await expect(page.getByTestId('door-4')).toHaveClass(/locked/);
+  await page.getByTestId('wtab-factory').click();
+  await expect(page.getByTestId('wf-0')).toContainText('Wichtel backt');
+  const stars = await page.evaluate(() => (window as unknown as { __cc: { store: { state: { winter: { stars: number } } } } }).__cc.store.state.winter.stars);
+  expect(stars).toBeGreaterThanOrEqual(50);
+  await page.reload();
+  await expect(page.getByTestId('money')).toBeVisible();
+  const w = await page.evaluate(() => (window as unknown as { __cc: { store: { state: { winter: { claimed: number[]; season: number } } } } }).__cc.store.state.winter);
+  expect(w.claimed).toEqual([1, 2, 3]);
+  expect(w.season).toBe(2026);
+  expect(errors).toEqual([]);
+});

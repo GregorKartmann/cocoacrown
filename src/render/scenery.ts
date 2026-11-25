@@ -11,6 +11,7 @@ export class Sky extends Container {
   private w = 0;
   private h = 0;
   private t = 0;
+  private winter = false;
 
   constructor() {
     super();
@@ -29,18 +30,32 @@ export class Sky extends Container {
     }
   }
 
+  /** Overcast winter sky (December snowfall). */
+  setWinter(on: boolean) {
+    if (on === this.winter) return;
+    this.winter = on;
+    if (this.w) this.resize(this.w, this.h);
+  }
+
   resize(w: number, h: number) {
     this.w = w;
     this.h = h;
+    const stops = this.winter
+      ? [
+          { offset: 0, color: 0x5d7193 },
+          { offset: 0.6, color: 0x9aa9c2 },
+          { offset: 1, color: 0xc9cfdc },
+        ]
+      : [
+          { offset: 0, color: 0x7d9fc8 },
+          { offset: 0.6, color: 0xb2c3de },
+          { offset: 1, color: 0xcacde1 },
+        ];
     const fill = new FillGradient({
       type: 'linear',
       start: { x: 0, y: 0 },
       end: { x: 0, y: 1 },
-      colorStops: [
-        { offset: 0, color: 0x7d9fc8 },
-        { offset: 0.6, color: 0xb2c3de },
-        { offset: 1, color: 0xcacde1 },
-      ],
+      colorStops: stops,
       textureSpace: 'local',
     });
     this.grad.clear().rect(0, 0, w, h).fill(fill);
@@ -49,6 +64,7 @@ export class Sky extends Container {
     this.sun.circle(0, 0, 44).fill({ color: 0xfff1b0, alpha: 0.6 });
     this.sun.circle(0, 0, 30).fill(0xfff6d6);
     this.sun.position.set(w * 0.82, h * 0.16);
+    this.sun.alpha = this.winter ? 0.35 : 1;
   }
 
   update(dt: number, scrollFrac: number) {

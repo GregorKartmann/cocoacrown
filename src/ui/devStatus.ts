@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.6.0 (Erfolge & Tagesziele)';
+export const APP_VERSION = '0.7.0 (Advent: Lebkuchen-Manufaktur)';
 
 /** Shown in Settings so players and testers see what is finished and what is planned. */
 export const DEV_STATUS: { text: string; done: boolean }[] = [
@@ -16,6 +16,7 @@ export const DEV_STATUS: { text: string; done: boolean }[] = [
   { text: 'Prestige „Marke verkaufen“ mit Kronen', done: true },
   { text: 'Zweites Werk mit Rohstoffkette', done: false },
   { text: '30 Erfolge, 3 Tagesziele pro Tag mit Serie und Belohnungen', done: true },
-  { text: 'Saison-Events', done: false },
+  { text: 'Advent-Event „Lebkuchen-Manufaktur“: 26 Türchen nach Gerätedatum, 3 Etagen, Wintermarkt, Winterdeko, Weihnachtsmanager', done: true },
+  { text: 'Weitere Saison-Events', done: false },
   { text: 'Cloud-Speicherstand und Konten', done: false },
 ];

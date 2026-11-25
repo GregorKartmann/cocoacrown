@@ -9,6 +9,7 @@ import './ui/styles.css';
 import { createRoot } from 'react-dom/client';
 import { useEffect, useState } from 'react';
 import { GameStore } from './game/GameStore';
+import { initEventClock } from './game/clock';
 import { SaveManager, indexedDbBackend, localStorageBackend, memoryBackend, type SaveBackend } from './save/storage';
 import { createGame } from './sim/init';
 import { App } from './ui/App';
@@ -132,6 +133,7 @@ async function boot(onProgress: (p: BootProgress) => void): Promise<{ store: Gam
   if (loaded.source === 'none' && loaded.error) notice = 'Spielstand konnte nicht gelesen werden – neues Spiel gestartet.';
   if (kind === 'memory') notice = 'In dieser Vorschau kann nicht gespeichert werden – der Fortschritt geht beim Schließen verloren.';
   if (artResult.failed.length) console.warn('[cocoa-crown] Grafiken nicht geladen:', artResult.failed);
+  initEventClock(location.search);
   const store = new GameStore(loaded.state ?? createGame(), saves);
   if (!owner) store.blockedByOtherTab = true;
   else {

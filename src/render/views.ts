@@ -1,4 +1,4 @@
-import { Container, Graphics, Rectangle, Sprite, type Text, type Texture } from 'pixi.js';
+import { Container, Graphics, Rectangle, Sprite, Texture, type Text } from 'pixi.js';
 import { FLOOR_ART } from '../config/content';
 import { tex, subTex } from './assets';
 import { P } from './palette';
@@ -662,10 +662,13 @@ export class ConstructionView extends Container {
 export class RoofView extends Container {
   private smokeTimer = 0;
   private chimneys: V2[] = [];
+  private roof: Sprite;
+  private snowy = false;
 
   constructor(private fx: Fx) {
     super();
     const roof = sprite('gebaeude/fabrikdach');
+    this.roof = roof;
     const w = L.towerW + 52;
     roof.width = w;
     roof.scale.y = roof.scale.x;
@@ -685,6 +688,20 @@ export class RoofView extends Container {
     sub.anchor.set(0.5);
     sub.position.set(L.towerW / 2, top + 4);
     this.addChild(roof, crownIcon, title, sub);
+  }
+
+  /** Winter: the painted roof with snow (same outline, a little taller). */
+  setSnow(on: boolean) {
+    if (on === this.snowy) return;
+    const t = tex(on ? 'winter/deko/fabrikdach_schnee' : 'gebaeude/fabrikdach');
+    if (t === Texture.EMPTY) return;
+    this.snowy = on;
+    const w = L.towerW + 52;
+    this.roof.texture = t;
+    // the snowy painting has 2 px of padding around the same roof
+    const k = on ? w / (t.width - 4) : w / t.width;
+    this.roof.scale.set(k);
+    this.roof.position.set(L.towerW / 2, L.roofH + 6 + (on ? 2 * k : 0));
   }
 
   update(dt: number, _liftSpeed: number, chimneyActive: boolean) {
@@ -716,6 +733,7 @@ export class GroundView extends Container {
   private parcel: Sprite;
   private parcelTime = 0;
   private driver: Figure;
+  private garland: Sprite;
   private t = 0;
 
   constructor(h: { tapShip: (x: number, y: number) => void; openShip: () => void; slotShip: () => void; openLift: () => void; slotLift: () => void; tapLift: (x: number, y: number) => void }) {
@@ -760,6 +778,12 @@ export class GroundView extends Container {
     this.parcel.visible = false;
     this.addChild(this.parcel);
 
+    this.garland = sprite('winter/deko/tannengirlande', 0.5, 0);
+    fit(this.garland, 236, 80);
+    this.garland.position.set(178, -4);
+    this.garland.visible = false;
+    this.addChild(this.garland);
+
     const name = hangingPlate('Versandlager');
     name.position.set(178 - (name as Container & { w: number }).w / 2, 14);
     this.addChild(name);
@@ -785,6 +809,11 @@ export class GroundView extends Container {
     liftCap.anchor.set(0.5);
     liftCap.position.set(286, 33);
     this.addChild(shipCap, liftCap, this.shipSlot, this.shipBadge, this.liftSlot, this.liftBadge, this.fullTag);
+  }
+
+  /** Winter: fir garland over the Versandlager. */
+  setGarland(on: boolean) {
+    this.garland.visible = on;
   }
 
   setDepot(fill: number, labelText: string, full: boolean) {
