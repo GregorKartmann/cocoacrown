@@ -1,15 +1,15 @@
 import { useRef, useState } from 'react';
 import { canVibrate, isIos } from '../../audio/audio';
 import { RESEARCH } from '../../config/research';
+import { ACHIEVEMENTS } from '../../config/goals';
 import { R } from '../../sim/research';
-import { QUESTS } from '../../config/quests';
 import { formatDuration, formatMoney, formatMultiplier, formatNumber, formatRate } from '../../core/format';
 import { quoteUpgrade } from '../../sim/actions';
 import { analyzeFlow, crownFactor, floorStats, liftStats, prestigeUnlocked, shipStats } from '../../sim/formulas';
 import type { StationId } from '../../sim/types';
 import { useGameVersion, useStore } from '../useGame';
 import { Sheet } from './Hud';
-import { IconCheck, IconCrown, IconFactory, IconGear, IconQuest, IconSound, IconStats } from '../icons';
+import { IconCrown, IconFactory, IconGear, IconSound, IconStats } from '../icons';
 import { stationName } from './ManagerSheet';
 import { DEV_STATUS, APP_VERSION } from '../devStatus';
 
@@ -62,39 +62,6 @@ export function OverviewSheet({ onClose, onStation }: { onClose: () => void; onS
   );
 }
 
-export function QuestsSheet({ onClose }: { onClose: () => void }) {
-  useGameVersion();
-  const store = useStore();
-  const s = store.state;
-  const n = s.settings.notation;
-  return (
-    <Sheet title="Aufträge" sub={`${Math.min(s.quest.index, QUESTS.length)} von ${QUESTS.length} erledigt`} icon={<IconQuest size={40} />} onClose={onClose}>
-      {QUESTS.map((q, i) => {
-        const done = i < s.quest.index;
-        const current = i === s.quest.index;
-        const p = Math.min(q.target, q.progress(s));
-        return (
-          <div key={q.id} className={`quest-row ${done ? 'done' : ''} ${current ? 'current' : ''}`}>
-            <span className="chk">{done ? <IconCheck size={16} /> : i + 1}</span>
-            <div>
-              <b>{q.title}</b>
-              {current && (
-                <div style={{ fontSize: 12.5, color: 'var(--ink-soft)' }}>
-                  {q.text} ({q.target >= 100 ? `${Math.floor((p / q.target) * 100)} %` : `${Math.floor(p)}/${q.target}`})
-                </div>
-              )}
-            </div>
-            <span className="r">{i > s.quest.index ? '???' : `+${formatMoney(q.reward, n)}`}</span>
-          </div>
-        );
-      })}
-      {s.quest.index >= QUESTS.length && (
-        <p className="flavor">Alle Aufträge der Manufaktur erledigt. Forschung, Prestige und neue Werke folgen in der nächsten Ausbaustufe.</p>
-      )}
-    </Sheet>
-  );
-}
-
 export function StatsSheet({ onClose, onPrestige }: { onClose: () => void; onPrestige: () => void }) {
   useGameVersion();
   const store = useStore();
@@ -117,6 +84,8 @@ export function StatsSheet({ onClose, onPrestige }: { onClose: () => void; onPre
     ['Kronen', `${formatNumber(s.prestige.crowns, n, 0)} (Einkommen ${formatMultiplier(crownFactor(s))})`],
     ['Marke verkauft', `${formatNumber(s.prestige.runs, n, 0)}×`],
     ['Schnellster Weg zur 5. Etage', s.prestige.bestFloor5 === null ? '–' : formatDuration(s.prestige.bestFloor5)],
+    ['Erfolge abgeholt', `${s.goals.claimed.length} von ${ACHIEVEMENTS.length}`],
+    ['Tagesziel-Serie', `${s.daily.streak} ${s.daily.streak === 1 ? 'Tag' : 'Tage'}`],
     ['Rezeptpunkte verdient', formatNumber(s.research.earned, n, 0)],
     ['Forschungsränge', `${formatNumber(Object.values(s.research.ranks).reduce((a, b) => a + b, 0), n, 0)} von ${RESEARCH.reduce((a, x) => a + x.maxRank, 0)}`],
     ['Dieser Durchlauf', `${formatDuration(st.playSeconds - s.prestige.runStartPlay)} · ${formatMoney(st.totalEarned.sub(s.prestige.runStartEarned), n)}`],

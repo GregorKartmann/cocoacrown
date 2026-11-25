@@ -1,6 +1,9 @@
 import { BALANCE } from '../config/balance';
 import type { ResearchId } from '../config/research';
 import { startResearch } from '../sim/research';
+import type { DailyMetric, GoalReward } from '../config/goals';
+import { ACHIEVEMENTS } from '../config/goals';
+import * as G from '../sim/goals';
 import { D, Decimal } from '../core/num';
 import * as A from '../sim/actions';
 import { analyzeFlow } from '../sim/formulas';
@@ -22,6 +25,11 @@ export type UiEvent =
   | { type: 'brandSold'; crowns: number }
   | { type: 'researchDone'; id: ResearchId; rank: number }
   | { type: 'researchStarted'; id: ResearchId }
+  | { type: 'achievement'; id: string }
+  | { type: 'dailyGoal'; id: string }
+  | { type: 'dailyDay'; streak: number; rewards: GoalReward[] }
+  | { type: 'claimed'; reward: GoalReward }
+  | { type: 'newDay' }
   | { type: 'fail'; station?: StationId };
 
 /** Rolling window of real sales for the "€/s" display. */
@@ -84,12 +92,17 @@ export class GameStore {
   private lastSave = 0;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
   private running = false;
+  /** Achievements already announced (claimable ones at load are not re-announced). */
+  private announced = new Set<string>();
+  private lastGoalCheck = 0;
 
   constructor(
     state: GameState,
     private saves: SaveManager | null,
   ) {
     this.state = state;
+    for (const a of G.claimableAchievements(state)) this.announced.add(a.id);
+    G.refreshDaily(state, Date.now());
   }
 
   /* ---------------- lifecycle ---------------- */
@@ -133,6 +146,8 @@ export class GameStore {
       n++;
     }
     if (n === 20) this.acc = 0;
+    if (n > 0) this.bumpDaily('activeSeconds', n * dt);
+    if (nowPerf - this.lastGoalCheck > 1000) this.checkGoals(nowPerf);
     this.alpha = this.acc / dt;
     // Wall clock of the simulated present (used for offline credit).
     this.state.lastWallTime = Date.now() - this.acc * 1000;
@@ -143,6 +158,7 @@ export class GameStore {
   /** Visibility returned or long freeze: credit the elapsed time like offline time. */
   handleAbsence(): void {
     const report = catchUp(this.state, Date.now());
+    if (G.refreshDaily(this.state, Date.now())) this.emit({ type: 'newDay' });
     this.acc = 0;
     this.lastPerf = performance.now();
     this.income.reset();
@@ -247,7 +263,14 @@ export class GameStore {
     const ev = this.simEvents;
     this.simEvents = [];
     for (const e of ev) {
-      if (e.type === 'sale') this.income.add(e.value);
+      if (e.type === 'sale') {
+        this.income.add(e.value);
+        this.bumpDaily('activeVanTrips', 1);
+        this.bumpDaily('activeValueShipped', e.value.toNumber());
+      } else if (e.type === 'batch') {
+        this.bumpDaily('activeBatches', 1);
+        this.bumpDaily('distinctActiveBatchFloors', 1, e.floor);
+      } else if (e.type === 'liftUnload') this.bumpDaily('activeLiftTrips', 1);
       else if (e.type === 'researchDone') {
         this.emit({ type: 'researchDone', id: e.id, rank: e.rank });
         this.persist(false);
@@ -261,6 +284,11 @@ export class GameStore {
   tap(station: StationId): A.TapResult {
     const r = A.tapStation(this.state, station, { events: this.simEvents, offline: false });
     this.emit({ type: 'tap', station, result: r });
+    if (r === 'started' || r === 'boosted') {
+      this.bumpDaily('acceptedActionTaps', 1);
+      this.bumpDaily('distinctManualStations', 1, station);
+      if (r === 'started' && station.startsWith('f')) this.bumpDaily('manualBatchStarts', 1);
+    }
     if (r === 'nothing' && station === 'lift') this.emit({ type: 'toast', text: 'Keine Ware zum Abholen.', tone: 'info' });
     if (r === 'nothing' && station === 'ship') this.emit({ type: 'toast', text: 'Das Versandlager ist leer.', tone: 'info' });
     this.notify(true);
@@ -273,6 +301,7 @@ export class GameStore {
     if (n > 0) {
       const after = levelOf(this.state, station);
       this.emit({ type: 'upgrade', station, levels: n, milestone: crossedMilestone(station, before, after) });
+      this.bumpDaily(station.startsWith('f') ? 'paidProductionLevels' : 'paidLogisticsLevels', n);
       this.persist(false);
     } else this.emit({ type: 'fail', station });
     this.notify(true);
@@ -313,6 +342,7 @@ export class GameStore {
     const ok = A.activateSkill(this.state, managerId);
     const m = this.state.managers.find((x) => x.id === managerId);
     if (ok && m?.assignedTo) this.emit({ type: 'skill', managerId, station: m.assignedTo });
+    if (ok) this.bumpDaily('activeManagerSkills', 1);
     this.notify(true);
     return ok;
   }
@@ -323,6 +353,62 @@ export class GameStore {
       this.emit({ type: 'golden', reward: r });
       this.persist(false);
     }
+    this.notify(true);
+    return r;
+  }
+
+  /* ---------------- goals ---------------- */
+
+  private bumpDaily(metric: DailyMetric, amount: number, key?: string | number): void {
+    const b = G.bumpDaily(this.state, metric, amount, key);
+    for (const id of b.completed) this.emit({ type: 'dailyGoal', id });
+    if (b.dayDone) {
+      this.emit({ type: 'dailyDay', streak: this.state.daily.streak, rewards: b.streakRewards });
+      this.persist(false);
+    }
+  }
+
+  /** New calendar day and newly reached achievements (about once a second). */
+  private checkGoals(nowPerf: number): void {
+    this.lastGoalCheck = nowPerf;
+    if (G.refreshDaily(this.state, Date.now())) {
+      this.emit({ type: 'newDay' });
+      this.persist(false);
+    }
+    for (const a of ACHIEVEMENTS) {
+      if (this.announced.has(a.id) || G.isClaimed(this.state, a.id) || !G.achievementReached(this.state, a)) continue;
+      this.announced.add(a.id);
+      this.emit({ type: 'achievement', id: a.id });
+    }
+  }
+
+  claimAchievement(id: string): boolean {
+    const r = G.claimAchievement(this.state, id);
+    if (r) {
+      this.emit({ type: 'claimed', reward: r });
+      this.persist(false);
+    } else this.emit({ type: 'fail' });
+    this.notify(true);
+    return !!r;
+  }
+
+  claimDaily(index: number): boolean {
+    const r = G.claimDaily(this.state, index);
+    if (r) {
+      this.emit({ type: 'claimed', reward: r });
+      this.persist(false);
+    } else this.emit({ type: 'fail' });
+    this.notify(true);
+    return !!r;
+  }
+
+  /** Uses a golden bean from the reward inventory. */
+  redeemBean(): A.GoldenReward | null {
+    const r = A.redeemGoldenBean(this.state);
+    if (r) {
+      this.emit({ type: 'golden', reward: r });
+      this.persist(false);
+    } else this.emit({ type: 'fail' });
     this.notify(true);
     return r;
   }

@@ -156,3 +156,29 @@ test('Rezeptlabor: öffnet mit der 3. Etage, Forschung starten kostet Punkte', a
   expect(r).toEqual({ points: 1, active: 'schnellere_zyklen' });
   expect(errors).toEqual([]);
 });
+
+test('Ziele: drei Tagesziele, Erfolg abholen, Goldene Bohne einlösen', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await open(page);
+  await page.evaluate(() => {
+    const st = (window as unknown as { __cc: { store: any } }).__cc.store; // eslint-disable-line @typescript-eslint/no-explicit-any
+    st.state.stats.batches = 12;
+    st.state.rewards.goldenBeans = 1;
+    st.notify(true);
+  });
+  await page.getByTestId('nav-goals').click();
+  await page.getByTestId('tab-daily').click();
+  await expect(page.getByTestId('daily-0')).toBeVisible();
+  await expect(page.getByTestId('daily-2')).toBeVisible();
+  await page.getByTestId('tab-achievements').click();
+  await page.waitForTimeout(400);
+  await page.getByTestId('claim-ach-charges_10').click();
+  await page.getByTestId('redeem-bean').click();
+  const st = await page.evaluate(() => {
+    const s = (window as unknown as { __cc: { store: { state: any } } }).__cc.store.state; // eslint-disable-line @typescript-eslint/no-explicit-any
+    return { claimed: s.goals.claimed, points: s.research.points, beans: s.rewards.goldenBeans, caught: s.stats.goldenCaught, goals: s.daily.goals.length };
+  });
+  expect(st).toEqual({ claimed: ['charges_10'], points: 1, beans: 0, caught: 0, goals: 3 });
+  expect(errors).toEqual([]);
+});

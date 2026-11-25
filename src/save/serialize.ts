@@ -5,6 +5,13 @@ import type { BuyMode, GameState, LiftPhase, Manager, ManagerBonus, ManagerCateg
 import { migrate } from './migrations';
 import { RESEARCH_BY_ID, RESEARCH_IDS, type ResearchId } from '../config/research';
 import { defaultResearch } from '../sim/research';
+import { ACHIEVEMENTS, DAILY_BY_ID } from '../config/goals';
+import { localTimeZone } from '../sim/goals';
+
+const ACHIEVEMENT_IDS = new Set(ACHIEVEMENTS.map((a) => a.id));
+function strList(v: unknown): string[] {
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string').slice(0, 200) : [];
+}
 
 export const SAVE_FORMAT = 'cocoa-crown-save';
 
@@ -39,6 +46,15 @@ export function toPlain(s: GameState): Record<string, unknown> {
     golden: { ...s.golden, active: s.golden.active ? { ...s.golden.active } : null },
     prestige: { ...s.prestige, runStartEarned: ser(s.prestige.runStartEarned) },
     research: { ...s.research, ranks: { ...s.research.ranks }, active: s.research.active ? { ...s.research.active } : null },
+    goals: { claimed: [...s.goals.claimed] },
+    rewards: { ...s.rewards },
+    daily: {
+      ...s.daily,
+      goals: s.daily.goals.map((g) => ({ ...g })),
+      prevIds: [...s.daily.prevIds],
+      floorsDone: [...s.daily.floorsDone],
+      stationsTapped: [...s.daily.stationsTapped],
+    },
   };
 }
 
@@ -186,6 +202,9 @@ export function fromPlain(o: Obj): GameState {
   const stats = obj(o.stats, 'stats');
   const golden = obj(o.golden, 'golden');
   const prestige = obj(o.prestige, 'prestige');
+  const goalsRaw = obj(o.goals ?? {}, 'goals');
+  const rewardsRaw = obj(o.rewards ?? {}, 'rewards');
+  const dailyRaw = obj(o.daily ?? {}, 'daily');
   const research = obj(o.research ?? {}, 'research');
   const ranksRaw = obj(research.ranks ?? {}, 'research.ranks');
   const ranks = defaultResearch().ranks;
@@ -232,6 +251,8 @@ export function fromPlain(o: Obj): GameState {
       managersHired: int(stats.managersHired, 'managersHired', 0, Number.MAX_SAFE_INTEGER),
       playSeconds: num(stats.playSeconds, 'playSeconds', 0),
       offlineSeconds: num(stats.offlineSeconds, 'offlineSeconds', 0),
+      maxFloorLevel: int(stats.maxFloorLevel ?? 1, 'maxFloorLevel', 1, 1e6),
+      maxFloors: int(stats.maxFloors ?? 1, 'maxFloors', 1, 64),
     },
     quest: { index: int(obj(o.quest, 'quest').index, 'quest.index', 0, 10000) },
     prestige: {
@@ -254,6 +275,31 @@ export function fromPlain(o: Obj): GameState {
             }
           : null,
       open: typeof research.open === 'boolean' ? research.open : false,
+    },
+    goals: { claimed: strList(goalsRaw.claimed).filter((id) => ACHIEVEMENT_IDS.has(id)) },
+    rewards: {
+      freeHires: int(rewardsRaw.freeHires ?? 0, 'rewards.freeHires', 0, 1e6),
+      goldenBeans: int(rewardsRaw.goldenBeans ?? 0, 'rewards.goldenBeans', 0, 1e6),
+    },
+    daily: {
+      tz: typeof dailyRaw.tz === 'string' && dailyRaw.tz ? dailyRaw.tz : localTimeZone(),
+      day: typeof dailyRaw.day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dailyRaw.day) ? dailyRaw.day : '',
+      goals: (Array.isArray(dailyRaw.goals) ? dailyRaw.goals : [])
+        .map((g) => obj(g, 'daily.goal'))
+        .filter((g) => typeof g.id === 'string' && DAILY_BY_ID[g.id as string])
+        .slice(0, 3)
+        .map((g) => ({
+          id: g.id as string,
+          target: num(g.target, 'daily.target', 1),
+          progress: num(g.progress, 'daily.progress', 0),
+          claimed: g.claimed === true,
+        })),
+      prevIds: strList(dailyRaw.prevIds),
+      floorsDone: (Array.isArray(dailyRaw.floorsDone) ? dailyRaw.floorsDone : []).filter((x): x is number => Number.isInteger(x)),
+      stationsTapped: strList(dailyRaw.stationsTapped),
+      streak: int(dailyRaw.streak ?? 0, 'daily.streak', 0, 1e6),
+      lastCompleteDay: typeof dailyRaw.lastCompleteDay === 'string' ? dailyRaw.lastCompleteDay : '',
+      streakHireGiven: dailyRaw.streakHireGiven === true,
     },
     rng: int(o.rng, 'rng', 0, 4294967295) >>> 0,
     settings: {

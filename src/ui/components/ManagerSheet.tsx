@@ -108,7 +108,7 @@ export function ManagerSheet({ target, onClose, onHired }: { target?: StationId;
         </div>
         <button
           className="btn mint small"
-          disabled={s.money.lt(cost)}
+          disabled={s.rewards.freeHires <= 0 && s.money.lt(cost)}
           onClick={() => {
             const id = store.hire(cat, hireTarget && !targetHasManager ? hireTarget : undefined);
             if (id) onHired(id);
@@ -116,7 +116,7 @@ export function ManagerSheet({ target, onClose, onHired }: { target?: StationId;
           data-testid="hire"
         >
           Einstellen
-          <span className="sub">{formatMoney(cost, n)}</span>
+          <span className="sub">{s.rewards.freeHires > 0 ? `kostenlos (${s.rewards.freeHires}×)` : formatMoney(cost, n)}</span>
         </button>
       </div>
       {list.length === 0 && <p className="flavor">Noch keine Manager in dieser Abteilung.</p>}

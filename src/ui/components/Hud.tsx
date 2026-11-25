@@ -4,6 +4,9 @@ import { currentQuest } from '../../sim/actions';
 import { crownsAvailable, prestigeUnlocked } from '../../sim/formulas';
 import { RESEARCH, RESEARCH_BY_ID, type ResearchId } from '../../config/research';
 import { R, whyNot } from '../../sim/research';
+import { DAILY_BY_ID, DAILY_REWARD, GOAL_ICON } from '../../config/goals';
+import { artUrl } from '../../render/assets';
+import { dailyTitle, goalsAttention } from './GoalsSheet';
 import type { StationId } from '../../sim/types';
 import { useGameVersion, useStore } from '../useGame';
 import { IconBolt, IconBox, IconClose, IconCoin, IconCrown, IconFactory, IconGear, IconGift, IconLab, IconLift, IconManager, IconQuest, IconStats, IconTruck, IconWatch } from '../icons';
@@ -132,12 +135,12 @@ export function TopBar({
 
 /* ------------------------------------------------------------------ */
 
-export function QuestCard({ onFocus, onClaim }: { onFocus: (id: StationId) => void; onClaim: () => void }) {
+export function QuestCard({ onFocus, onClaim, onOpenGoals }: { onFocus: (id: StationId) => void; onClaim: () => void; onOpenGoals: () => void }) {
   useGameVersion();
   const store = useStore();
   const q = currentQuest(store.state);
   const [open, setOpen] = useState(true);
-  if (!q) return null;
+  if (!q) return <DailyCard onOpenGoals={onOpenGoals} />;
   const n = store.state.settings.notation;
   const frac = Math.min(1, q.progress / q.def.target);
   const progressText = q.def.target >= 100 ? `${Math.round(frac * 100)} %` : `${Math.floor(q.progress)}/${q.def.target}`;
@@ -181,6 +184,48 @@ export function QuestCard({ onFocus, onClaim }: { onFocus: (id: StationId) => vo
 
 /* ------------------------------------------------------------------ */
 
+/** After the guided quests: the next open daily goal sits where the quest card was. */
+function DailyCard({ onOpenGoals }: { onOpenGoals: () => void }) {
+  const store = useStore();
+  const s = store.state;
+  const i = s.daily.goals.findIndex((g) => !g.claimed);
+  if (i < 0) return null;
+  const g = s.daily.goals[i];
+  const t = DAILY_BY_ID[g.id];
+  if (!t) return null;
+  const done = g.progress >= g.target;
+  const frac = Math.min(1, g.progress / g.target);
+  return (
+    <div className={`quest panel daily-card ${done ? 'done' : ''}`} onClick={onOpenGoals} data-testid="daily-card">
+      <div className="qicon">
+        <img className="icon-img" src={artUrl(GOAL_ICON[t.icon])} alt="" style={{ width: 28, height: 28 }} />
+      </div>
+      <div className="qbody">
+        <div className="qtitle">Tagesziel: {dailyTitle(s, t, g.target)}</div>
+        <div className="qmeta">
+          <div className="bar gold">
+            <i style={{ width: `${frac * 100}%` }} />
+          </div>
+          <span>{Math.floor(frac * 100)} %</span>
+          <span>+{DAILY_REWARD.amount} Rezeptpunkte</span>
+        </div>
+      </div>
+      {done && (
+        <button
+          className="btn gold small"
+          onClick={(e) => {
+            e.stopPropagation();
+            store.claimDaily(i);
+          }}
+          data-testid="claim-daily-card"
+        >
+          <IconGift size={18} /> Abholen
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function BottomNav({ onOpen, refEl }: { onOpen: (what: 'overview' | 'managers' | 'quests' | 'research' | 'stats') => void; refEl: React.Ref<HTMLDivElement> }) {
   useGameVersion();
   const store = useStore();
@@ -200,10 +245,10 @@ export function BottomNav({ onOpen, refEl }: { onOpen: (what: 'overview' | 'mana
         Manager
         {(unmanaged || readySkill) && <span className="dot" />}
       </button>
-      <button onClick={() => onOpen('quests')}>
+      <button onClick={() => onOpen('quests')} data-testid="nav-goals">
         <IconQuest size={30} />
-        Aufträge
-        {q?.done && <span className="dot" />}
+        Ziele
+        {(q?.done || goalsAttention(s) > 0) && <span className="dot" />}
       </button>
       <button onClick={() => onOpen('research')} data-testid="nav-research" className={s.research.open ? '' : 'locked'}>
         <IconLab size={30} />

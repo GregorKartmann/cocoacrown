@@ -22,6 +22,7 @@ import {
 } from './formulas';
 import { freshFloors, freshLift, freshShip } from './init';
 import { POINTS, R, addResearchPoints, checkLabOpen } from './research';
+import { updateRecords } from './goals';
 import { scheduleGolden } from './sim';
 import { nextRandom, randomInt, weightedPick } from './rng';
 import type { BuyMode, GameState, Manager, ManagerCategory, SimContext, StationId } from './types';
@@ -68,6 +69,7 @@ export function buyUpgrade(s: GameState, station: StationId, mode: BuyMode): num
   else s.floors[floorIndex(station)].level += q.levels;
   // every milestone reached is worth a Rezeptpunkt (again in every run)
   addResearchPoints(s, milestonesCrossed(station, before, before + q.levels) * POINTS.milestone);
+  updateRecords(s);
   return q.levels;
 }
 
@@ -82,6 +84,7 @@ export function unlockFloor(s: GameState, i: number): boolean {
   f.level = 1;
   addResearchPoints(s, POINTS.floor);
   checkLabOpen(s);
+  updateRecords(s);
   // A manager who ran this floor before the last brand sale returns on their own.
   const station = `f${i}` as StationId;
   const back = s.managers.find((m) => m.home === station && !m.assignedTo);
@@ -100,11 +103,18 @@ export function nextLockedFloor(s: GameState): number | null {
 /* Managers                                                                   */
 /* ------------------------------------------------------------------------- */
 
+/**
+ * Hires a manager. A free hire from achievements or the daily streak is used
+ * first; it costs nothing and does not raise the price of later hires.
+ */
 export function hireManager(s: GameState, category: ManagerCategory): Manager | null {
-  const cost = managerHireCost(s, category);
-  if (s.money.lt(cost)) return null;
-  s.money = s.money.sub(cost);
-  s.hires[category] += 1;
+  if (s.rewards.freeHires > 0) s.rewards.freeHires -= 1;
+  else {
+    const cost = managerHireCost(s, category);
+    if (s.money.lt(cost)) return null;
+    s.money = s.money.sub(cost);
+    s.hires[category] += 1;
+  }
   const rarity = weightedPick(s, BALANCE.managers.rarities);
   const bonuses = CATEGORY_BONUSES[category];
   const bonus = bonuses[randomInt(s, bonuses.length)];
@@ -289,6 +299,17 @@ export function catchGolden(s: GameState): GoldenReward | null {
   s.golden.active = null;
   scheduleGolden(s);
   s.stats.goldenCaught += 1;
+  return goldenReward(s);
+}
+
+/** Uses a golden bean won as a reward (does not count as caught). */
+export function redeemGoldenBean(s: GameState): GoldenReward | null {
+  if (s.rewards.goldenBeans <= 0) return null;
+  s.rewards.goldenBeans -= 1;
+  return goldenReward(s);
+}
+
+function goldenReward(s: GameState): GoldenReward {
   const idx = weightedPick(s, BALANCE.golden.rewards);
   const r = BALANCE.golden.rewards[idx];
   if (r.id === 'cash') {

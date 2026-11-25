@@ -10,7 +10,11 @@ import { GameContext } from './useGame';
 import { BottomNav, OfflineDialog, QuestCard, Toasts, TopBar, type ToastItem } from './components/Hud';
 import { StationSheet, UnlockSheet } from './components/StationSheet';
 import { HireReveal, ManagerSheet, stationName } from './components/ManagerSheet';
-import { OverviewSheet, QuestsSheet, SettingsSheet, StatsSheet } from './components/MenuSheets';
+import { OverviewSheet, SettingsSheet, StatsSheet } from './components/MenuSheets';
+import { GoalsSheet } from './components/GoalsSheet';
+import { QUESTS } from '../config/quests';
+import { ACHIEVEMENTS, DAILY_BY_ID } from '../config/goals';
+import { rewardText } from '../sim/goals';
 import { BrandSoldDialog, PrestigeSheet } from './components/PrestigeSheet';
 import { ResearchSheet } from './components/ResearchSheet';
 import { LAB_FLOOR, RESEARCH_BY_ID } from '../config/research';
@@ -131,6 +135,36 @@ export function App({ store, updateAvailable, onUpdate }: { store: GameStore; up
           else if (e.reward.kind === 'rush') toast(`Goldrausch! Alle Etagen ×${e.reward.factor} Tempo für ${e.reward.duration} s`, 'gold');
           else toast(`Express! Aufzug und Lieferwagen ×${e.reward.factor} Tempo für ${e.reward.duration} s`, 'gold');
           break;
+        case 'achievement': {
+          const a = ACHIEVEMENTS.find((x) => x.id === e.id);
+          audio.play('milestone');
+          haptic(hap, 25);
+          if (a) toast(`Erfolg erreicht: ${a.title}`, 'gold');
+          break;
+        }
+        case 'dailyGoal': {
+          const t = DAILY_BY_ID[e.id];
+          audio.play('upgrade');
+          if (t) toast(`Tagesziel erfüllt – hol dir die Rezeptpunkte ab.`, 'good');
+          break;
+        }
+        case 'dailyDay':
+          audio.play('milestone');
+          haptic(hap, 40);
+          toast(
+            `Alle Tagesziele geschafft! Serie: ${e.streak} ${e.streak === 1 ? 'Tag' : 'Tage'}${e.rewards.length ? ` · ${e.rewards.map(rewardText).join(' + ')}` : ''}`,
+            'gold',
+          );
+          break;
+        case 'claimed':
+          audio.play('claim');
+          haptic(hap, 15);
+          toast(`+${rewardText(e.reward)}`, 'good');
+          setBump((b) => b + 1);
+          break;
+        case 'newDay':
+          toast('Neue Tagesziele sind da.', 'info');
+          break;
         case 'quest':
           audio.play('claim');
           haptic(hap, 20);
@@ -248,7 +282,7 @@ export function App({ store, updateAvailable, onUpdate }: { store: GameStore; up
         <div className="world-host" ref={hostRef} data-testid="world" />
         <TopBar onSettings={() => setSheet({ kind: 'settings' })} onStation={openStation} onPrestige={() => setSheet({ kind: 'prestige' })} bump={bump} refEl={topRef} />
         <div className="bottom-ui" ref={bottomRef}>
-          <QuestCard onFocus={(id) => worldRef.current?.focus(id)} onClaim={() => store.claimQuest()} />
+          <QuestCard onFocus={(id) => worldRef.current?.focus(id)} onClaim={() => store.claimQuest()} onOpenGoals={() => setSheet({ kind: 'quests' })} />
           <BottomNav
             onOpen={(w) => {
               if (w === 'research' && !store.state.research.open) {
@@ -276,7 +310,7 @@ export function App({ store, updateAvailable, onUpdate }: { store: GameStore; up
         {sheet?.kind === 'unlock' && <UnlockSheet floor={sheet.floor} onClose={close} />}
         {sheet?.kind === 'managers' && <ManagerSheet target={sheet.target} onClose={close} onHired={(id) => setReveal(id)} />}
         {sheet?.kind === 'overview' && <OverviewSheet onClose={close} onStation={openStation} />}
-        {sheet?.kind === 'quests' && <QuestsSheet onClose={close} />}
+        {sheet?.kind === 'quests' && <GoalsSheet onClose={close} initial={store.state.quest.index < QUESTS.length ? 'quests' : 'daily'} />}
         {sheet?.kind === 'stats' && <StatsSheet onClose={close} onPrestige={() => setSheet({ kind: 'prestige' })} />}
         {sheet?.kind === 'prestige' && <PrestigeSheet onClose={close} />}
         {sheet?.kind === 'research' && <ResearchSheet onClose={close} />}

@@ -4,7 +4,7 @@
 
 Der Branch `gh-pages` enthält den fertigen Build (`npm run build` → `dist/`).
 
-Idle-Tycoon-Spiel als Webapp und installierbare PWA. Version 0.5.0 mit gemaltem Asset-Pack, Prestige („Marke verkaufen“ gegen Kronen) und Rezeptlabor (Forschung): die Manufaktur mit acht Produktionsetagen, Lastenaufzug, Lieferwagen, Managern, Aufträgen, Goldener Kakaobohne, Offline-Progression und lokalen Spielständen.
+Idle-Tycoon-Spiel als Webapp und installierbare PWA. Version 0.6.0 mit gemaltem Asset-Pack, Prestige („Marke verkaufen“ gegen Kronen), Rezeptlabor (Forschung), Erfolgen und Tageszielen: die Manufaktur mit acht Produktionsetagen, Lastenaufzug, Lieferwagen, Managern, Aufträgen, Goldener Kakaobohne, Offline-Progression und lokalen Spielständen.
 
 ## Starten
 
@@ -59,4 +59,5 @@ Danach das Erweiterungspaket (Etagen 6–8, Rezeptlabor) ergänzen – es schrei
 
 ```bash
 python3 -I scripts/prepare-expansion.py <Pfad/zu/Cocoa_Crown_Erweiterung> .
+python3 -I scripts/prepare-goals.py <Pfad/zu/Cocoa_Crown_Erfolge> .
 ```

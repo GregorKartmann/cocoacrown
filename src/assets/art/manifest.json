@@ -1,4 +1,76 @@
 {
+ "abzeichen/alternativen/aufzug": {
+  "h": 200,
+  "w": 135
+ },
+ "abzeichen/alternativen/fabrik": {
+  "h": 200,
+  "w": 180
+ },
+ "abzeichen/alternativen/forschung": {
+  "h": 200,
+  "w": 200
+ },
+ "abzeichen/alternativen/kakaobohne": {
+  "h": 200,
+  "w": 152
+ },
+ "abzeichen/alternativen/lieferung": {
+  "h": 178,
+  "w": 200
+ },
+ "abzeichen/alternativen/manager": {
+  "h": 200,
+  "w": 168
+ },
+ "abzeichen/alternativen/marke": {
+  "h": 200,
+  "w": 157
+ },
+ "abzeichen/alternativen/offline": {
+  "h": 195,
+  "w": 200
+ },
+ "abzeichen/alternativen/produktion": {
+  "h": 199,
+  "w": 200
+ },
+ "abzeichen/alternativen/serie_kurz": {
+  "h": 200,
+  "w": 198
+ },
+ "abzeichen/alternativen/serie_lang": {
+  "h": 200,
+  "w": 139
+ },
+ "abzeichen/alternativen/serie_woche": {
+  "h": 193,
+  "w": 200
+ },
+ "abzeichen/medaille_bronze": {
+  "h": 200,
+  "w": 145
+ },
+ "abzeichen/medaille_gold": {
+  "h": 200,
+  "w": 147
+ },
+ "abzeichen/medaille_silber": {
+  "h": 200,
+  "w": 147
+ },
+ "abzeichen/pokal_gold": {
+  "h": 189,
+  "w": 200
+ },
+ "abzeichen/pokal_krone": {
+  "h": 200,
+  "w": 190
+ },
+ "abzeichen/serienflamme": {
+  "h": 200,
+  "w": 167
+ },
  "effekte/bohnenwurf": {
   "h": 200,
   "w": 220

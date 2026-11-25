@@ -112,6 +112,9 @@ export interface Stats {
   managersHired: number;
   playSeconds: number;
   offlineSeconds: number;
+  /** Lifetime records for achievements (kept through the brand sale). */
+  maxFloorLevel: number;
+  maxFloors: number;
 }
 
 export interface PrestigeState {
@@ -136,6 +139,31 @@ export interface ResearchState {
   active: { id: ResearchId; remaining: number; total: number } | null;
   /** The lab opened (3rd floor built once); stays open after a brand sale. */
   open: boolean;
+}
+
+export interface DailyGoalState {
+  id: string;
+  target: number;
+  progress: number;
+  claimed: boolean;
+}
+
+export interface DailyState {
+  /** IANA time zone saved when the game started; days change at local midnight there. */
+  tz: string;
+  /** Calendar day (YYYY-MM-DD) of the current offer, '' before the first one. */
+  day: string;
+  goals: DailyGoalState[];
+  /** Goal ids of the previous offer (not repeated the next day when possible). */
+  prevIds: string[];
+  /** Per-day sets for the "distinct" goals. */
+  floorsDone: number[];
+  stationsTapped: string[];
+  /** Days in a row with all three goals done; last such day. */
+  streak: number;
+  lastCompleteDay: string;
+  /** The 3-day reward of the current streak was given. */
+  streakHireGiven: boolean;
 }
 
 export interface Settings {
@@ -166,6 +194,11 @@ export interface GameState {
   quest: { index: number };
   prestige: PrestigeState;
   research: ResearchState;
+  /** Achievements whose reward was claimed. */
+  goals: { claimed: string[] };
+  /** Rewards waiting to be used: free manager hires and redeemable golden beans. */
+  rewards: { freeHires: number; goldenBeans: number };
+  daily: DailyState;
   rng: number;
   settings: Settings;
 }

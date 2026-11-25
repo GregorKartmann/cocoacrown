@@ -8,6 +8,8 @@
  *   2 – prestige "Marke verkaufen" (crowns), manager home stations, smooth tap time
  *   3 – floors 6–8 (appended locked), Rezeptlabor (research state; the lab
  *       opens right away if the 3rd floor already stands)
+ *   4 – Erfolge, Tagesziele und Serie, Belohnungen; lifetime records for the
+ *       achievements are taken from the current game (and the prestige best time)
  */
 import { BALANCE } from '../config/balance';
 
@@ -43,6 +45,17 @@ export const MIGRATIONS: Record<number, Migration> = {
       floors,
       research: { points, earned: points, ranks: {}, active: null, open: !!third?.unlocked || (prestige.runs ?? 0) > 0 },
     };
+  },
+  3: (d) => {
+    const floors = (Array.isArray(d.floors) ? d.floors : []) as { unlocked?: boolean; level?: number }[];
+    const open = floors.filter((f) => f.unlocked);
+    const prestige = (d.prestige ?? {}) as { bestFloor5?: number | null; runs?: number };
+    const reached5 = prestige.bestFloor5 !== null && prestige.bestFloor5 !== undefined;
+    const stats = { ...((d.stats ?? {}) as Record<string, unknown>) };
+    stats.maxFloorLevel = Math.max(1, ...open.map((f) => (typeof f.level === 'number' ? f.level : 1)));
+    stats.maxFloors = Math.max(1, open.length, reached5 ? 5 : 0);
+    // daily state is created on load (time zone of this device)
+    return { ...d, stats, goals: { claimed: [] }, rewards: { freeHires: 0, goldenBeans: 0 } };
   },
 };
 
