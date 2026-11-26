@@ -1,4 +1,4 @@
-import { BALANCE, type Milestone, type LogisticsMilestone } from '../config/balance';
+import { BALANCE, type FloorDef, type Milestone, type LogisticsMilestone } from '../config/balance';
 import { D, Decimal } from '../core/num';
 import { R } from './research';
 import type { GameState, Manager, ManagerBonus, StationId } from './types';
@@ -93,7 +93,7 @@ export function boostFactor(s: GameState, kind: 'rush' | 'express'): number {
 /* Floors                                                                     */
 /* ------------------------------------------------------------------------- */
 
-export const FLOOR_IDS = ['f0', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7'] as const;
+export const FLOOR_IDS = ['f0', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9'] as const;
 /** The 5th floor gates the brand sale (prestige) and is the pacing reference. */
 export const PRESTIGE_FLOOR = 4;
 
@@ -258,12 +258,24 @@ export function perCrown(s: GameState): number {
   return BALANCE.prestige.perCrown + R.perCrownBonus(s);
 }
 
+/** Crowns as they count for the income bonus: in full up to 100, then with the square root. */
+export function bonusCrowns(crowns: number): number {
+  const t = BALANCE.prestige.fullBonusUpTo;
+  return crowns <= t ? crowns : t * Math.sqrt(crowns / t);
+}
+
 export function crownFactor(s: GameState): number {
-  return 1 + perCrown(s) * s.prestige.crowns;
+  return 1 + perCrown(s) * bonusCrowns(s.prestige.crowns);
 }
 
 export function crownFactorFor(crowns: number, s?: GameState): number {
-  return 1 + (s ? perCrown(s) : BALANCE.prestige.perCrown) * crowns;
+  return 1 + (s ? perCrown(s) : BALANCE.prestige.perCrown) * bonusCrowns(crowns);
+}
+
+/** Crowns still missing before floor i can be built (0 = none needed). */
+export function crownsMissingFor(s: GameState, i: number): number {
+  const need = (BALANCE.floors[i] as FloorDef | undefined)?.crowns ?? 0;
+  return Math.max(0, need - s.prestige.crowns);
 }
 
 /**

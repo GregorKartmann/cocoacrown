@@ -147,7 +147,7 @@ function oneOf<T extends string>(v: unknown, allowed: readonly T[], what: string
   return v as T;
 }
 
-const STATIONS: StationId[] = ['f0', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'lift', 'ship'];
+const STATIONS: StationId[] = ['f0', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'lift', 'ship'];
 const CATEGORIES: ManagerCategory[] = ['floor', 'lift', 'ship'];
 const BONUSES: ManagerBonus[] = ['speed', 'yield', 'cost', 'capacity', 'price'];
 const LIFT_PHASES: LiftPhase[] = ['idle', 'up', 'stop', 'down', 'unload'];

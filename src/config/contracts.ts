@@ -98,7 +98,7 @@ export const CUSTOMERS: CustomerDef[] = [
     icon: 'vertraege/kunden/salon',
     ruf: 140,
     kind: 'units',
-    floors: [5, 6, 7],
+    floors: [5, 6, 7, 8, 9],
     minutes: [20, 25],
     demand: [1.0, 1.15],
     pay: 0.55,

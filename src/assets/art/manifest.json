@@ -91,6 +91,18 @@
   "h": 171,
   "w": 220
  },
+ "effekte/galerie_glanz": {
+  "h": 205,
+  "w": 220
+ },
+ "effekte/galerie_lichtfleck": {
+  "h": 81,
+  "w": 220
+ },
+ "effekte/galerie_lichtkegel": {
+  "h": 175,
+  "w": 220
+ },
  "effekte/glut": {
   "h": 193,
   "w": 220
@@ -101,6 +113,18 @@
  },
  "effekte/haselnuss_wurf": {
   "h": 216,
+  "w": 220
+ },
+ "effekte/kaeltenebel_01": {
+  "h": 134,
+  "w": 220
+ },
+ "effekte/kaeltenebel_02": {
+  "h": 80,
+  "w": 220
+ },
+ "effekte/kaeltenebel_03": {
+  "h": 62,
   "w": 220
  },
  "effekte/kontaktschatten": {
@@ -127,6 +151,10 @@
   "h": 220,
   "w": 116
  },
+ "figuren/bildhauerin": {
+  "h": 220,
+  "w": 95
+ },
  "figuren/chocolatiere": {
   "h": 220,
   "w": 113
@@ -138,6 +166,10 @@
  "figuren/inhaber": {
   "h": 220,
   "w": 151
+ },
+ "figuren/kuratorin": {
+  "h": 220,
+  "w": 91
  },
  "figuren/laufposen/arbeiter_01": {
   "h": 220,
@@ -174,6 +206,10 @@
  "figuren/meisterin": {
   "h": 220,
   "w": 99
+ },
+ "figuren/restaurator": {
+  "h": 220,
+  "w": 108
  },
  "figuren/vorarbeiter": {
   "h": 220,
@@ -299,6 +335,10 @@
   "h": 515,
   "w": 450
  },
+ "hintergruende/etage_galerie": {
+  "h": 512,
+  "w": 1024
+ },
  "hintergruende/etage_geschenkbox": {
   "h": 512,
   "w": 1024
@@ -316,6 +356,10 @@
   "w": 1024
  },
  "hintergruende/etage_ruby": {
+  "h": 512,
+  "w": 1024
+ },
+ "hintergruende/etage_skulpturen": {
   "h": 512,
   "w": 1024
  },
@@ -379,13 +423,29 @@
   "h": 420,
   "w": 393
  },
+ "maschinen/giessformen_karussell": {
+  "h": 239,
+  "w": 420
+ },
  "maschinen/nougat_melangeur": {
   "h": 326,
+  "w": 420
+ },
+ "maschinen/praegeanlage": {
+  "h": 274,
   "w": 420
  },
  "maschinen/ruby_temperieranlage": {
   "h": 398,
   "w": 420
+ },
+ "maschinen/teile/formteller": {
+  "h": 163,
+  "w": 320
+ },
+ "maschinen/teile/praegewalze": {
+  "h": 79,
+  "w": 320
  },
  "maschinen/trommelroester": {
   "h": 420,
@@ -559,8 +619,20 @@
   "h": 146,
   "w": 160
  },
+ "produkte/loewe": {
+  "h": 160,
+  "w": 123
+ },
  "produkte/pralinen": {
   "h": 158,
+  "w": 160
+ },
+ "produkte/relief_kakao": {
+  "h": 160,
+  "w": 109
+ },
+ "produkte/relief_stadt": {
+  "h": 117,
   "w": 160
  },
  "produkte/roestnibs": {
@@ -575,6 +647,10 @@
   "h": 160,
   "w": 129
  },
+ "produkte/schwan": {
+  "h": 160,
+  "w": 154
+ },
  "produkte/signature_box": {
   "h": 160,
   "w": 160
@@ -586,6 +662,18 @@
  "produkte/trueffel": {
   "h": 160,
   "w": 157
+ },
+ "requisiten/formen_werkbank": {
+  "h": 252,
+  "w": 260
+ },
+ "requisiten/galerie_sockel": {
+  "h": 240,
+  "w": 260
+ },
+ "requisiten/galerieleuchte": {
+  "h": 98,
+  "w": 260
  },
  "requisiten/geschenkbox_wagen": {
   "h": 245,
@@ -610,6 +698,10 @@
  "requisiten/pralinen_wagen": {
   "h": 260,
   "w": 240
+ },
+ "requisiten/restaurierung_wagen": {
+  "h": 247,
+  "w": 260
  },
  "requisiten/roesterei_saecke": {
   "h": 253,

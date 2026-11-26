@@ -30,7 +30,7 @@ describe('Prestige: Kronen-Formel', () => {
     expect(crownsByEarnings(D(4 * DIV))).toBe(2);
     expect(crownsByEarnings(D(100 * DIV))).toBe(10);
     // huge numbers stay finite
-    expect(crownsByEarnings(D('1e80'))).toBeGreaterThan(1e15);
+    expect(crownsByEarnings(D('1e80'))).toBeGreaterThan(1e12);
   });
 
   it('Spielstände mit vielen Kronen aus der Zeit vor der steileren Kurve bekommen weiter Kronen', () => {
@@ -41,23 +41,24 @@ describe('Prestige: Kronen-Formel', () => {
     s.prestige.runStartEarned = D(3000 * 3000 * DIV);
     s.prestige.spent = 2000; // the treasury does not matter for the sale
     expect(crownsAvailable(s)).toBe(0);
-    s.stats.totalEarned = s.stats.totalEarned.mul(1.5);
+    s.stats.totalEarned = s.stats.totalEarned.mul(3);
     const gain = crownsAvailable(s);
-    expect(gain).toBeGreaterThan(50);
+    expect(gain).toBeGreaterThan(30);
     expect(nextCrownAt(s).gt(s.stats.totalEarned)).toBe(true);
     expect(crownStepStart(s).lte(s.stats.totalEarned)).toBe(true);
     expect(sellBrand(s)).toBe(gain);
     expect(s.prestige.crowns).toBe(3000 + gain);
   });
 
-  it('ab 100 Kronen gilt die vierte Wurzel: doppelt so viele Kronen brauchen 16× Umsatz', () => {
-    expect(crownsByEarnings(D(10000 * DIV))).toBe(100);
-    expect(crownsByEarnings(D(10000 * DIV).mul(0.9999))).toBe(99);
-    expect(crownsByEarnings(D(160000 * DIV))).toBe(200);
-    expect(crownsByEarnings(D(160000 * DIV).mul(0.999))).toBe(199);
-    expect(earningsForCrowns(200).div(DIV).toNumber()).toBeCloseTo(160000, 6);
-    expect(earningsForCrowns(100).eq(10000 * DIV)).toBe(true);
-    for (const k of [101, 150, 333, 1000]) expect(crownsByEarnings(earningsForCrowns(k).mul(1.0000001))).toBe(k);
+  it('ab 50 Kronen gilt die sechste Wurzel: doppelt so viele Kronen brauchen 64× Umsatz', () => {
+    expect(BALANCE.prestige.tailFrom).toBe(50);
+    expect(crownsByEarnings(D(2500 * DIV))).toBe(50);
+    expect(crownsByEarnings(D(2500 * DIV).mul(0.9999))).toBe(49);
+    expect(crownsByEarnings(D(160000 * DIV))).toBe(100);
+    expect(crownsByEarnings(D(160000 * DIV).mul(0.999))).toBe(99);
+    expect(earningsForCrowns(100).div(DIV).toNumber()).toBeCloseTo(160000, 6);
+    expect(earningsForCrowns(50).eq(2500 * DIV)).toBe(true);
+    for (const k of [51, 75, 101, 333, 750, 2000]) expect(crownsByEarnings(earningsForCrowns(k).mul(1.0000001))).toBe(k);
   });
 
   it('Bereits erhaltene Kronen werden abgezogen, die nächste Krone liegt bei (k+1)² · Teiler', () => {

@@ -86,9 +86,13 @@ test('PWA: Manifest, Service Worker und Offline-Start', async ({ page, context }
   });
   expect(manifest?.display).toBe('standalone');
   expect(manifest?.icons?.length).toBeGreaterThanOrEqual(3);
-  await page.waitForFunction(async () => !!(await navigator.serviceWorker.getRegistration())?.active, null, { timeout: 20000 });
+  // waitForFunction does not await an async predicate, so poll the worker state instead:
+  // reloading while the worker is still precaching aborts the install.
+  await expect
+    .poll(() => page.evaluate(async () => (await navigator.serviceWorker.getRegistration())?.active?.state ?? null), { timeout: 30000 })
+    .toBe('activated');
   await page.reload();
-  await page.waitForTimeout(1500);
+  await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller), { timeout: 10000 }).toBe(true);
   await context.setOffline(true);
   await page.reload();
   await expect(page.getByTestId('money')).toBeVisible({ timeout: 15000 });

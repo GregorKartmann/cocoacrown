@@ -54,6 +54,8 @@ export const FLOOR_FLAVOR = [
   'Geröstete Haselnüsse werden zwischen Mühlsteinen zu cremigem Nougat gemahlen.',
   'Im gekühlten Glasbehälter wird rosa Ruby-Schokolade exakt temperiert.',
   'Die Prägepresse schließt jede Signature-Box mit dem Kronensiegel.',
+  'Im Gießformen-Karussell erstarren Schwäne und Löwen aus massiver Schokolade.',
+  'Die Prägeanlage presst gerahmte Schokoladenreliefs für die Galerie der Krone.',
 ];
 
 /* ------------------------------------------------------------------ */
@@ -76,7 +78,32 @@ export function portraitKey(name: string, category: ManagerCategory, variant: nu
   return `portraits/${set[Math.abs(variant) % set.length]}`;
 }
 
-export const FLOOR_ART = [
+/** Extra painted pieces of a floor, in design units of the 322 × 150 floor (x centre, y bottom). */
+export interface FloorDecor {
+  key: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** back: behind the workers, front: in front of everything but the HUD. */
+  layer: 'back' | 'front';
+  /** Additive light that breathes slowly. */
+  light?: number;
+}
+
+export const FLOOR_ART: {
+  bg: string;
+  floorLine: number;
+  machine: string;
+  prop: string;
+  product: string;
+  /** Second product, alternated in the storage stack. */
+  product2?: string;
+  operator: string;
+  /** A figure that always stands on the floor (foreground), x and facing. */
+  extra?: { key: string; x: number; flip: boolean };
+  decor?: FloorDecor[];
+}[] = [
   { bg: 'hintergruende/etage_roesterei', floorLine: 447, machine: 'maschinen/trommelroester', prop: 'requisiten/roesterei_saecke', product: 'produkte/roestnibs', operator: 'figuren/arbeiter_schaufel' },
   { bg: 'hintergruende/etage_trinkkakao', floorLine: 458, machine: 'maschinen/conche', prop: 'requisiten/kakao_regal', product: 'produkte/trinkkakao', operator: 'figuren/vorarbeiter' },
   { bg: 'hintergruende/etage_veredelung', floorLine: 446, machine: 'maschinen/giessanlage', prop: 'requisiten/tafeln_tisch', product: 'produkte/schokoladentafel', operator: 'figuren/chocolatiere' },
@@ -85,4 +112,33 @@ export const FLOOR_ART = [
   { bg: 'hintergruende/etage_nougat', floorLine: 442, machine: 'maschinen/nougat_melangeur', prop: 'requisiten/haselnusskiste', product: 'produkte/haselnuss_nougat', operator: 'figuren/arbeiterin_sack' },
   { bg: 'hintergruende/etage_ruby', floorLine: 442, machine: 'maschinen/ruby_temperieranlage', prop: 'requisiten/ruby_regal', product: 'produkte/ruby_tafel', operator: 'figuren/chocolatiere' },
   { bg: 'hintergruende/etage_geschenkbox', floorLine: 442, machine: 'maschinen/geschenkbox_presse', prop: 'requisiten/geschenkbox_wagen', product: 'produkte/signature_box', operator: 'figuren/managerin_versand' },
+  {
+    bg: 'hintergruende/etage_skulpturen',
+    floorLine: 458,
+    machine: 'maschinen/giessformen_karussell',
+    prop: 'requisiten/formen_werkbank',
+    product: 'produkte/schwan',
+    product2: 'produkte/loewe',
+    operator: 'figuren/bildhauerin',
+    decor: [
+      { key: 'requisiten/galerie_sockel', x: 236, y: 137, w: 24, h: 26, layer: 'back' },
+      { key: 'produkte/loewe', x: 236, y: 113, w: 19, h: 20, layer: 'back' },
+    ],
+  },
+  {
+    bg: 'hintergruende/etage_galerie',
+    floorLine: 459,
+    machine: 'maschinen/praegeanlage',
+    prop: 'requisiten/restaurierung_wagen',
+    product: 'produkte/relief_kakao',
+    product2: 'produkte/relief_stadt',
+    operator: 'figuren/kuratorin',
+    extra: { key: 'figuren/restaurator', x: 262, flip: true },
+    decor: [
+      { key: 'effekte/galerie_lichtkegel', x: 230, y: 93, w: 46, h: 88, layer: 'back', light: 0.3 },
+      { key: 'requisiten/galerieleuchte', x: 230, y: 67, w: 24, h: 10, layer: 'back' },
+      { key: 'produkte/relief_stadt', x: 230, y: 92, w: 32, h: 25, layer: 'back' },
+      { key: 'effekte/galerie_lichtfleck', x: 236, y: 140, w: 58, h: 16, layer: 'back', light: 0.45 },
+    ],
+  },
 ];

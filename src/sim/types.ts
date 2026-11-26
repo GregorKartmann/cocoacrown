@@ -5,7 +5,7 @@ import type { CustomerId } from '../config/contracts';
 import type { GoalReward } from '../config/goals';
 import type { TreasuryId } from '../config/treasury';
 
-export type FloorStationId = 'f0' | 'f1' | 'f2' | 'f3' | 'f4' | 'f5' | 'f6' | 'f7';
+export type FloorStationId = 'f0' | 'f1' | 'f2' | 'f3' | 'f4' | 'f5' | 'f6' | 'f7' | 'f8' | 'f9';
 export type StationId = FloorStationId | 'lift' | 'ship';
 export type ManagerCategory = 'floor' | 'lift' | 'ship';
 export type ManagerBonus = 'speed' | 'yield' | 'cost' | 'capacity' | 'price';

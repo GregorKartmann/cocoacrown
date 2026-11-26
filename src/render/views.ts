@@ -5,7 +5,7 @@ import { P } from './palette';
 import { Bar, DISPLAY, LevelBadge, LiveText, ManagerSlot, Tag, label, liveLabel, plate } from './hud';
 import { L } from './layout';
 
-export const FLOOR_SHORT = ['Röstnibs', 'Trinkkakao', 'Tafeln', 'Pralinen', 'Trüffel', 'Nougat', 'Ruby', 'Signature'];
+export const FLOOR_SHORT = ['Röstnibs', 'Trinkkakao', 'Tafeln', 'Pralinen', 'Trüffel', 'Nougat', 'Ruby', 'Signature', 'Skulpturen', 'Galerie'];
 
 export interface StationHandlers {
   tap: (x: number, y: number) => void;
@@ -188,6 +188,12 @@ export class Figure extends Container {
 
 type V2 = [number, number];
 interface MachineFx {
+  /** Separate moving part painted on top (0.9.0 machines): position, width share, motion. */
+  part?: { key: string; at: V2; width: number; motion: 'turn' | 'press' };
+  /** Cold mist frames that puff out of an outlet while the machine runs. */
+  fog?: { at: V2; frames: string[] };
+  /** Where the tier plaques sit (defaults fit the base machines). */
+  tierAt?: { gauge?: V2; plaque?: V2; pilot?: V2 };
   steam?: V2;
   lamp: V2;
   batch: string;
@@ -210,6 +216,23 @@ const MACHINE_FX: MachineFx[] = [
   { steam: [0.38, 0.04], lamp: [0.8, 0.46], batch: 'effekte/ruby_spritzer', batchAt: [0.36, 0.7], swirl: [0.38, 0.42], drips: [[0.36, 0.72]] },
   // 8 Geschenkbox-Presse: press light on the base, golden seal shine on the box
   { lamp: [0.55, 0.9], batch: 'effekte/siegel_glanz', batchAt: [0.55, 0.55], dust: [[0.45, 0.62], [0.55, 0.62], [0.65, 0.62]] },
+  // 9 Gießformen-Karussell: the mould plate turns, cold mist leaves the cooling tunnel, the porthole glows
+  {
+    part: { key: 'maschinen/teile/formteller', at: [0.425, 0.5], width: 0.49, motion: 'turn' },
+    fog: { at: [0.8, 0.57], frames: ['effekte/kaeltenebel_01', 'effekte/kaeltenebel_02', 'effekte/kaeltenebel_03'] },
+    lamp: [0.86, 0.3],
+    batch: 'effekte/goldglanz',
+    batchAt: [0.43, 0.42],
+    tierAt: { gauge: [0.06, 0.62], plaque: [0.42, 0.88], pilot: [0.93, 0.62] },
+  },
+  // 10 Prägeanlage: the roller presses, the base lamp glows, a golden glint on the new relief
+  {
+    part: { key: 'maschinen/teile/praegewalze', at: [0.5, 0.41], width: 0.52, motion: 'press' },
+    lamp: [0.5, 0.86],
+    batch: 'effekte/galerie_glanz',
+    batchAt: [0.5, 0.62],
+    tierAt: { gauge: [0.12, 0.52], plaque: [0.5, 0.12], pilot: [0.88, 0.52] },
+  },
 ];
 
 /**
@@ -232,6 +255,11 @@ export class MachineView extends Container {
   private t = Math.random() * 3;
   private bump = 0;
   private steamTimer = Math.random();
+  private part: Sprite | null = null;
+  private partHome = { x: 0, y: 0 };
+  private fogLayer = new Container();
+  private fogs: { s: Sprite; age: number; life: number; vx: number }[] = [];
+  private fogTimer = Math.random();
   tier = 1;
 
   constructor(
@@ -249,7 +277,17 @@ export class MachineView extends Container {
     this.h = this.body.height;
     this.lamp.blendMode = 'add';
     this.glow.blendMode = 'add';
-    this.addChild(shadow(this.w * 1.05, 0.6), this.body, this.anim, this.glow, this.lamp, this.upgrades);
+    this.addChild(shadow(this.w * 1.05, 0.6), this.body);
+    const part = this.fxCfg.part;
+    if (part) {
+      this.part = sprite(part.key, 0.5, 0.5);
+      this.part.width = this.w * part.width;
+      this.part.scale.y = this.part.scale.x;
+      this.partHome = this.at(part.at);
+      this.part.position.set(this.partHome.x, this.partHome.y);
+      this.addChild(this.part);
+    }
+    this.addChild(this.anim, this.glow, this.lamp, this.upgrades, this.fogLayer);
   }
 
   /** Local position of a relative point on the sprite (0..1). */
@@ -269,7 +307,7 @@ export class MachineView extends Container {
       const n = sprite('maschinen/upgrades/zeiger', 0.5, 0.87);
       n.height = 8.5;
       n.scale.x = n.scale.y;
-      const p = this.at([0.1, 0.42]);
+      const p = this.at(this.fxCfg.tierAt?.gauge ?? [0.1, 0.42]);
       g.position.set(p.x, p.y);
       n.position.set(p.x, p.y);
       this.needle = n;
@@ -280,11 +318,11 @@ export class MachineView extends Container {
       const pl = sprite(seal ? 'maschinen/upgrades/kronensiegel' : 'maschinen/upgrades/kronenplakette', 0.5, 0.5);
       pl.width = seal ? 28 : 32;
       pl.scale.y = pl.scale.x;
-      const p = this.at(seal ? [0.56, 0.22] : [0.5, 0.9]);
+      const p = this.at(seal ? [0.56, 0.22] : (this.fxCfg.tierAt?.plaque ?? [0.5, 0.9]));
       pl.position.set(p.x, p.y);
       const lamp = sprite('maschinen/upgrades/kontrollleuchte', 0.5, 0.5);
       lamp.width = lamp.height = 13;
-      const q = this.at([0.9, 0.16]);
+      const q = this.at(this.fxCfg.tierAt?.pilot ?? [0.9, 0.16]);
       lamp.position.set(q.x, q.y);
       this.pilot = lamp;
       this.upgrades.addChild(pl, lamp);
@@ -362,6 +400,64 @@ export class MachineView extends Container {
       }
     }
 
+    // separate moving part: the mould plate turns, the embossing roller presses
+    if (this.part) {
+      const m = f.part!.motion;
+      const sq = 1 - squash;
+      if (m === 'turn') {
+        this.part.x = this.partHome.x + vib + (active ? Math.sin(this.t * (1.6 + rate * 0.4)) * 0.9 : 0);
+        this.part.y = this.partHome.y * sq - Math.sin(this.bump * Math.PI) * 2.2;
+        this.part.rotation = active ? Math.sin(this.t * (1.1 + rate * 0.3)) * 0.018 : 0;
+      } else {
+        const press = Math.sin(this.bump * Math.PI);
+        this.part.x = this.partHome.x + vib;
+        this.part.y = this.partHome.y * sq + press * this.h * 0.06 + (active ? Math.sin(this.t * (5 + rate * 2)) * 0.35 : 0);
+        this.part.scale.y = this.part.scale.x * (active ? 1 + Math.sin(this.t * (9 + rate * 3)) * 0.035 : 1);
+      }
+    }
+
+    // cold mist from the cooling tunnel, three frames from dense to dissolving
+    if (f.fog) {
+      if (active) {
+        this.fogTimer -= dt * Math.max(0.7, Math.min(2, rate));
+        if (this.fogTimer <= 0) {
+          this.fogTimer = 0.55;
+          const s = sprite(f.fog.frames[0], 0.15, 0.5);
+          s.width = this.w * 0.3;
+          s.scale.y = s.scale.x;
+          const o = this.at(f.fog.at);
+          s.position.set(o.x, o.y);
+          s.alpha = 0;
+          this.fogLayer.addChild(s);
+          this.fogs.push({ s, age: 0, life: 1.5, vx: 9 + Math.random() * 6 });
+        }
+      }
+      for (let i = this.fogs.length - 1; i >= 0; i--) {
+        const p = this.fogs[i];
+        p.age += dt;
+        const k = p.age / p.life;
+        if (k >= 1) {
+          p.s.destroy();
+          this.fogs.splice(i, 1);
+          continue;
+        }
+        const frame = f.fog.frames[Math.min(f.fog.frames.length - 1, Math.floor(k * f.fog.frames.length))];
+        const t = tex(frame);
+        if (p.s.texture !== t) {
+          const w = p.s.width;
+          p.s.texture = t;
+          p.s.width = w;
+          p.s.scale.y = p.s.scale.x;
+        }
+        p.s.x += p.vx * dt;
+        p.s.y -= 3 * dt;
+        const grow = this.w * (0.3 + k * 0.25);
+        p.s.width = grow;
+        p.s.scale.y = p.s.scale.x;
+        p.s.alpha = (k < 0.15 ? k / 0.15 : 1 - (k - 0.15) / 0.85) * 0.85;
+      }
+    }
+
     if (this.needle) this.needle.rotation = active ? -0.8 + Math.sin(this.t * 2.2) * 0.3 + rate * 0.12 : -1.3;
     if (this.pilot) this.pilot.alpha = active ? 0.7 + Math.sin(this.t * 6) * 0.3 : 0.45;
 
@@ -394,6 +490,10 @@ export class FloorView extends Container {
   private stack = new Container();
   private stackCount = -1;
   private productTex: Texture;
+  private productTex2: Texture | null;
+  private extra: Figure | null = null;
+  private lights: { s: Sprite; base: number; ph: number }[] = [];
+  private lightT = 0;
   private bufferText: LiveText;
   private bufferBar = new Bar(70, 7, P.petrolLight);
   private fullTag = new Tag('LAGER VOLL');
@@ -417,7 +517,21 @@ export class FloorView extends Container {
     super();
     const art = FLOOR_ART[index];
     this.productTex = tex(art.product);
+    this.productTex2 = art.product2 ? tex(art.product2) : null;
     this.addChild(roomBackground(art.bg, art.floorLine, STAND, L.floorH), pillar(L.floorH));
+    const front: Sprite[] = [];
+    for (const d of art.decor ?? []) {
+      const s = sprite(d.key);
+      fit(s, d.w, d.h);
+      s.position.set(d.x, d.y);
+      if (d.light) {
+        s.blendMode = 'add';
+        s.alpha = d.light;
+        this.lights.push({ s, base: d.light, ph: Math.random() * 6 });
+      }
+      if (d.layer === 'front') front.push(s);
+      else this.addChild(s);
+    }
     const sep = new Graphics();
     sep.rect(-12, L.floorH - 3, L.interiorW + 12, 3).fill({ color: P.espresso, alpha: 0.85 });
     this.addChild(sep);
@@ -452,6 +566,12 @@ export class FloorView extends Container {
     this.operator.visible = false;
     this.addChild(this.workerLayer);
     this.workerLayer.addChild(this.operator);
+    if (art.extra) {
+      this.extra = new Figure(art.extra.key, 50, art.extra.flip);
+      this.extra.position.set(art.extra.x, STAND + 4);
+      this.addChild(this.extra);
+    }
+    if (front.length) this.addChild(...front);
 
     // labels
     const name = hangingPlate(`${index + 1} · ${FLOOR_SHORT[index]}`);
@@ -526,7 +646,7 @@ export class FloorView extends Container {
       [PROP_X, STAND - 27],
     ];
     for (let i = 0; i < n; i++) {
-      const s = new Sprite(this.productTex);
+      const s = new Sprite(this.productTex2 && i % 2 === 1 ? this.productTex2 : this.productTex);
       s.anchor.set(0.5, 1);
       fit(s, 19, 18);
       s.position.set(spots[i][0], spots[i][1]);
@@ -572,6 +692,11 @@ export class FloorView extends Container {
       w.update(dt);
     }
     this.operator.update(dt, active);
+    this.extra?.update(dt, active);
+    if (this.lights.length) {
+      this.lightT += dt;
+      for (const l of this.lights) l.s.alpha = l.base * (0.85 + Math.sin(this.lightT * 0.9 + l.ph) * 0.15);
+    }
     this.badge.update(dt);
     this.slot.update(dt);
     this.fullTag.update(dt);
@@ -591,6 +716,7 @@ export class ConstructionView extends Container {
   private btnHolder = new Container();
   private t = 0;
   private affordable: boolean | null = null;
+  private action!: Text;
   floor = -1;
 
   constructor(onTap: () => void) {
@@ -623,6 +749,7 @@ export class ConstructionView extends Container {
     fit(lock, 20, 20);
     lock.position.set(-46, 0);
     const bl = label('Bauen', { fontSize: 12, fill: P.ivory });
+    this.action = bl;
     bl.anchor.set(0.5);
     bl.position.set(10, -7);
     this.cost = liveLabel({ fontSize: 13.5, fontFamily: DISPLAY, fontWeight: '700', fill: P.brassLight });
@@ -637,10 +764,13 @@ export class ConstructionView extends Container {
     this.on('pointertap', onTap);
   }
 
-  sync(floor: number, costLabel: string, affordable: boolean) {
+  /** crownsNeed > 0: the floor also waits for that many owned crowns. */
+  sync(floor: number, costLabel: string, affordable: boolean, crownsNeed = 0) {
     this.floor = floor;
     this.nameText.text = `${floor + 1} · ${FLOOR_SHORT[floor]}`;
     this.cost.value = costLabel;
+    const act = crownsNeed > 0 ? `Ab ${crownsNeed} Kronen` : 'Bauen';
+    if (this.action.text !== act) this.action.text = act;
     if (affordable !== this.affordable) {
       this.affordable = affordable;
       this.btn.clear();

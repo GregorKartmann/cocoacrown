@@ -51,9 +51,9 @@ describe('Kalender', () => {
 });
 
 describe('Erfolge', () => {
-  it('sind 30 Stück und lesen dauerhafte Zähler', () => {
-    expect(ACHIEVEMENTS.length).toBe(30);
-    expect(new Set(ACHIEVEMENTS.map((a) => a.id)).size).toBe(30);
+  it('sind 32 Stück und lesen dauerhafte Zähler', () => {
+    expect(ACHIEVEMENTS.length).toBe(32);
+    expect(new Set(ACHIEVEMENTS.map((a) => a.id)).size).toBe(32);
   });
 
   it('werden erreicht, einmal abgeholt und geben ihre Belohnung', () => {

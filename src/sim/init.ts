@@ -13,8 +13,9 @@ import type { FloorState, GameState, LiftState, PrestigeState, Settings, ShipSta
  * v4: Erfolge, Tagesziele mit Serie, Belohnungen (kostenlose Einstellung, Goldene Bohne).
  * v5: Advent-Event „Lebkuchen-Manufaktur“ (winter state), Winterdeko-Einstellung.
  * v6: Lieferverträge (contracts), Kronen-Schatzkammer (prestige.spent/treasury).
+ * v7: Etagen 9 und 10 (Skulpturen-Atelier, Schokoladen-Galerie).
  */
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 export function defaultSettings(): Settings {
   return { notation: 'short', sound: true, music: true, haptics: true, buyMode: 1, winterDecor: true };

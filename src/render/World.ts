@@ -1,10 +1,10 @@
 import { Application, Container, Graphics, Rectangle } from 'pixi.js';
-import { BALANCE } from '../config/balance';
+import { BALANCE, type FloorDef } from '../config/balance';
 import { formatMoney } from '../core/format';
 import { ratio } from '../core/num';
 import type { GameStore } from '../game/GameStore';
 import { quoteUpgrade } from '../sim/actions';
-import { analyzeFlow, floorStats, floorUnlockCost, liftStats, logisticsMilestoneFactors, managerOf, shipStats } from '../sim/formulas';
+import { analyzeFlow, crownsMissingFor, floorStats, floorUnlockCost, liftStats, logisticsMilestoneFactors, managerOf, shipStats } from '../sim/formulas';
 import type { StationId } from '../sim/types';
 import { tex } from './assets';
 import { Sprite } from 'pixi.js';
@@ -512,7 +512,8 @@ export class World {
     const next = s.floors.findIndex((f) => !f.unlocked);
     if (next >= 0) {
       const cost = floorUnlockCost(next);
-      this.construction.sync(next, formatMoney(cost, notation), s.money.gte(cost));
+      const need = crownsMissingFor(s, next) > 0 ? (BALANCE.floors[next] as FloorDef).crowns ?? 0 : 0;
+      this.construction.sync(next, formatMoney(cost, notation), need === 0 && s.money.gte(cost), need);
     }
     const ls = liftStats(s);
     const lm = managerOf(s, 'lift');

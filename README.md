@@ -4,7 +4,7 @@
 
 Der Branch `gh-pages` enthält den fertigen Build (`npm run build` → `dist/`).
 
-Idle-Tycoon-Spiel als Webapp und installierbare PWA. Version 0.8.1 mit gemaltem Asset-Pack, Prestige („Marke verkaufen“ gegen Kronen) samt Kronen-Schatzkammer, Lieferverträgen, Rezeptlabor (Forschung), Erfolgen, Tageszielen und dem Advent-Event „Lebkuchen-Manufaktur“: die Manufaktur mit acht Produktionsetagen, Lastenaufzug, Lieferwagen, Managern, Aufträgen, Goldener Kakaobohne, Offline-Progression und lokalen Spielständen.
+Idle-Tycoon-Spiel als Webapp und installierbare PWA. Version 0.9.0 mit gemaltem Asset-Pack, Prestige („Marke verkaufen“ gegen Kronen) samt Kronen-Schatzkammer, Lieferverträgen, Rezeptlabor (Forschung), Erfolgen, Tageszielen und dem Advent-Event „Lebkuchen-Manufaktur“: die Manufaktur mit zehn Produktionsetagen (Etage 9 und 10 öffnen sich erst mit genug Kronen), Lastenaufzug, Lieferwagen, Managern, Aufträgen, Goldener Kakaobohne, Offline-Progression und lokalen Spielständen.
 
 ## Starten
 
@@ -25,6 +25,14 @@ npx playwright test      # Browser-Tests gegen den Build (nutzt installiertes Ch
 ```
 
 `tests/balance.report.test.ts` lässt zwei simulierte Spieler (aufmerksam / gelegentlich) zwei Stunden spielen und prüft das Tempo gegen die Design-Ziele. Die Zeitleisten stehen im Testlog.
+
+Für das Spätspiel gibt es eine lange Kampagne über viele Markenverkäufe (mit Verträgen, Labor und Schatzkammer). Sie läuft nur auf Wunsch:
+
+```bash
+LONG_CAMPAIGN=1 CAMPAIGN_HOURS=30 SELL_RULE=short npx vitest run tests/campaign.long.test.ts
+```
+
+`TUNE='prestige.tailRoot=5,floors.8.crowns=600'` überschreibt Balancing-Werte für einen Probelauf. Stand 0.9.0 (aufmerksam): Etage 8 nach etwa 3 h, Etage 9 nach etwa 8 h, Etage 10 nach etwa 20 h.
 
 ## Architektur
 
@@ -57,11 +65,12 @@ python3 -I scripts/prepare-assets.py <Pfad/zum/Cocoa_Crown_Assets> .
 
 Das Skript beschneidet Transparenz, skaliert pro Gruppe, schreibt WebP nach `src/assets/art/` und kopiert die App-Icons nach `public/`.
 
-Danach das Erweiterungspaket (Etagen 6–8, Rezeptlabor) ergänzen – es schreibt in dieselben Ordner und erweitert `manifest.json`:
+Danach die Erweiterungspakete (Etagen 6–8 mit Rezeptlabor, Etagen 9 und 10) ergänzen – es schreibt in dieselben Ordner und erweitert `manifest.json`:
 
 ```bash
 python3 -I scripts/prepare-expansion.py <Pfad/zu/Cocoa_Crown_Erweiterung> .
 python3 -I scripts/prepare-goals.py <Pfad/zu/Cocoa_Crown_Erfolge> .
 python3 -I scripts/prepare-winter.py <Pfad/zu/Cocoa_Crown_Winter_Pack> .
 python3 -I scripts/prepare-contracts.py <Pfad/zu/Cocoa_Crown_Vertraege_und_Schatzkammer> .
+python3 -I scripts/prepare-floors910.py <Pfad/zu/Cocoa_Crown_Etagen_09_10> .
 ```

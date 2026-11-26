@@ -127,6 +127,8 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'floor_6', category: 'Fabrikausbau', icon: 'factory', badge: 'cup', title: 'Etage 6 bauen', target: 6, value: (s) => s.stats.maxFloors, reward: rp(2) },
   { id: 'floor_7', category: 'Fabrikausbau', icon: 'factory', badge: 'cup', title: 'Etage 7 bauen', target: 7, value: (s) => s.stats.maxFloors, reward: rp(2) },
   { id: 'floor_8', category: 'Fabrikausbau', icon: 'factory', badge: 'crown', title: 'Etage 8 bauen', target: 8, value: (s) => s.stats.maxFloors, reward: bean },
+  { id: 'floor_9', category: 'Fabrikausbau', icon: 'factory', badge: 'crown', title: 'Etage 9 bauen', target: 9, value: (s) => s.stats.maxFloors, reward: bean },
+  { id: 'floor_10', category: 'Fabrikausbau', icon: 'factory', badge: 'crown', title: 'Etage 10 bauen', target: 10, value: (s) => s.stats.maxFloors, reward: bean },
   { id: 'prestige_1', category: 'Prestige', icon: 'prestige', badge: 'crown', title: 'Erste Marke verkaufen', target: 1, value: (s) => s.prestige.runs, reward: hire },
   { id: 'prestige_5', category: 'Prestige', icon: 'prestige', badge: 'crown', title: '5 Marken verkaufen', target: 5, value: (s) => s.prestige.runs, reward: bean },
 ];

@@ -168,7 +168,7 @@ describe('Etagen 6–8 (Oberhaus)', () => {
     unlockFloor(s, 6);
     unlockFloor(s, 7);
     expect(oberhausFactor(s)).toBe(512);
-    expect(s.floors.every((f) => f.unlocked)).toBe(true);
+    expect(s.floors.slice(0, 8).every((f) => f.unlocked)).toBe(true);
   });
 
   it('migriert Spielstände aus Version 2: drei neue, gesperrte Etagen und ein Startguthaben an Rezeptpunkten', () => {
@@ -184,7 +184,7 @@ describe('Etagen 6–8 (Oberhaus)', () => {
     plain.version = 2;
     const data = JSON.stringify(plain);
     const back = decodeSave({ format: 'cocoa-crown-save', version: 2, savedAt: 1, checksum: checksum(data), data });
-    expect(back.floors.length).toBe(8);
+    expect(back.floors.length).toBe(10);
     expect(back.floors.slice(5).every((f) => !f.unlocked && f.level === 1)).toBe(true);
     expect(back.research.open).toBe(true);
     // 3 floors + 2 floor milestones + 6 quests

@@ -14,6 +14,7 @@
  *       starts on the first load in November or December), Winterdeko on
  *   6 – Lieferverträge (board opens on the first load if the 2nd floor stands)
  *       and Kronen-Schatzkammer (no crowns spent yet)
+ *   7 – floors 9 and 10 appended, locked
  */
 import { BALANCE } from '../config/balance';
 
@@ -60,6 +61,13 @@ export const MIGRATIONS: Record<number, Migration> = {
     stats.maxFloors = Math.max(1, open.length, reached5 ? 5 : 0);
     // daily state is created on load (time zone of this device)
     return { ...d, stats, goals: { claimed: [] }, rewards: { freeHires: 0, goldenBeans: 0 } };
+  },
+  6: (d) => {
+    const floors = Array.isArray(d.floors) ? [...(d.floors as Record<string, unknown>[])] : [];
+    while (floors.length < 10) {
+      floors.push({ unlocked: false, level: 1, progress: 0, running: false, buffer: '0', managerId: null, stalled: false, tapBudget: 6, rush: 0 });
+    }
+    return { ...d, floors };
   },
   5: (d) => {
     const prestige = { ...((d.prestige ?? {}) as Record<string, unknown>), spent: 0, treasury: {} };

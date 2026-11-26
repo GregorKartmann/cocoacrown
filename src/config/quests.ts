@@ -50,4 +50,6 @@ export const QUESTS: QuestDef[] = [
   { id: 'q-nougat', title: 'Das Oberhaus', text: 'Baue die sechste Etage: die Nougat-Werkstatt. Aufzug und Lieferwagen werden dabei größer.', target: 1, progress: (s) => (s.floors[5].unlocked ? 1 : 0), reward: 2e8, focus: 'f5' },
   { id: 'q-ruby', title: 'Rosa Wunder', text: 'Baue die siebte Etage: den Ruby-Temperierraum.', target: 1, progress: (s) => (s.floors[6].unlocked ? 1 : 0), reward: 6e9, focus: 'f6' },
   { id: 'q-signature', title: 'Mit Brief und Siegel', text: 'Baue die achte Etage: das Geschenkbox-Atelier mit dem Kronensiegel.', target: 1, progress: (s) => (s.floors[7].unlocked ? 1 : 0), reward: 2e11, focus: 'f7' },
+  { id: 'q-sculptures', title: 'In Form gegossen', text: 'Sammle 750 Kronen und baue die neunte Etage: das Skulpturen-Atelier.', target: 1, progress: (s) => (s.floors[8].unlocked ? 1 : 0), reward: 2e14, focus: 'f8' },
+  { id: 'q-gallery', title: 'Die Galerie der Krone', text: 'Sammle 2000 Kronen und baue die zehnte Etage: die Schokoladen-Galerie.', target: 1, progress: (s) => (s.floors[9].unlocked ? 1 : 0), reward: 2e17, focus: 'f9' },
 ];

@@ -21,6 +21,7 @@ import {
   floorStats,
   shipStats,
   stationLevel,
+  crownsMissingFor,
 } from './formulas';
 import { freshFloors, freshLift, freshShip } from './init';
 import { POINTS, R, addResearchPoints, checkLabOpen } from './research';
@@ -79,6 +80,7 @@ export function unlockFloor(s: GameState, i: number): boolean {
   const f = s.floors[i];
   if (!f || f.unlocked) return false;
   if (i > 0 && !s.floors[i - 1].unlocked) return false;
+  if (crownsMissingFor(s, i) > 0) return false;
   const cost = floorUnlockCost(i);
   if (s.money.lt(cost)) return false;
   s.money = s.money.sub(cost);

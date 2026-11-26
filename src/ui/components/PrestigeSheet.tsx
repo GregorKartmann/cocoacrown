@@ -10,6 +10,10 @@ import { Sheet } from './Hud';
 import { TreasuryPanel } from './TreasuryPanel';
 import { TREASURY } from '../../config/treasury';
 import { crownsFree, treasuryCost } from '../../sim/treasury';
+import type { FloorDef } from '../../config/balance';
+
+const GATE_9 = (BALANCE.floors[8] as FloorDef).crowns ?? 0;
+const GATE_10 = (BALANCE.floors[9] as FloorDef).crowns ?? 0;
 
 /** Estimated time to the 5th floor after the sale, from the player's own best time (see BALANCE.prestige). */
 export function floor5Estimate(s: GameState, crownsAfter: number): number | null {
@@ -144,7 +148,7 @@ export function PrestigeSheet({ onClose, initial }: { onClose: () => void; initi
           <div className="section-title">Wird zurückgesetzt</div>
           <ul>
             <li>Geld und alle Level</li>
-            <li>Etagen 2–8</li>
+            <li>Etagen 2–10</li>
             <li>Aufzug, Versand und Lieferwagen</li>
             <li>Laufende Boni</li>
             <li>Laufender Liefervertrag und Angebote</li>
@@ -153,8 +157,9 @@ export function PrestigeSheet({ onClose, initial }: { onClose: () => void; initi
       </div>
 
       <p className="flavor">
-        Kronen wachsen mit der Wurzel deines Gesamtumsatzes: Wer länger wartet, bekommt mehr – aber jede weitere Krone dauert länger. Ab 100 Kronen gilt die
-        vierte Wurzel. Gib Kronen in der Schatzkammer für Startboni aus; ihr Einkommensbonus bleibt dabei erhalten.
+        Kronen wachsen mit der Wurzel deines Gesamtumsatzes: Wer länger wartet, bekommt mehr – aber jede weitere Krone dauert länger. Ab 50 Kronen gilt die
+        sechste Wurzel. Bis 100 Kronen bringt jede Krone +10 % Einkommen, danach wächst der Bonus langsamer. Mit {GATE_9} Kronen öffnet sich Etage 9, mit{' '}
+        {GATE_10} Kronen Etage 10. Gib Kronen in der Schatzkammer für Startboni aus; ihr Einkommensbonus und ihr Siegel für die Etagen bleiben dabei erhalten.
       </p>
 
       <button

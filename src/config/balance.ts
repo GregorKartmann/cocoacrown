@@ -34,13 +34,15 @@ export interface FloorDef {
   /** Cost of the upgrade from level 1 to 2. */
   baseCost: number;
   /**
-   * Floors 6–8 come with a bigger lift cabin and bigger vans: lift and van
+   * Floors 6–10 come with a bigger lift cabin and bigger vans: lift and van
    * capacity are multiplied by this once the floor stands (the "Oberhaus").
    * 0.8.1: ×8 instead of ×3 – each of these floors is worth ×20 per unit,
    * and with ×3 the lift could never catch up with all eight floors.
    */
   logistics?: number;
   costGrowth: number;
+  /** Crowns the player must own (spent ones count) before this floor can be built. */
+  crowns?: number;
 }
 
 export interface LogisticsMilestone {
@@ -80,9 +82,12 @@ export const BALANCE = {
     { id: 'bars', product: 'Schokoladentafel', productPlural: 'Schokoladentafeln', machine: 'Gießanlage', unitValue: 500, baseUnits: 3, baseCycle: 5, unlockCost: 250000, baseCost: 100000, costGrowth: 1.15 },
     { id: 'pralines', product: 'Pralinenschachtel', productPlural: 'Pralinenschachteln', machine: 'Überziehmaschine', unitValue: 10000, baseUnits: 3, baseCycle: 6, unlockCost: 5000000, baseCost: 2000000, costGrowth: 1.15 },
     { id: 'truffles', product: 'Trüffelbox', productPlural: 'Trüffelboxen', machine: 'Trüffel-Atelier', unitValue: 200000, baseUnits: 3, baseCycle: 8, unlockCost: 100000000, baseCost: 40000000, costGrowth: 1.15 },
-    { id: 'nougat', product: 'Haselnuss-Nougat', productPlural: 'Haselnuss-Nougats', machine: 'Nougat-Mélangeur', unitValue: 4e6, baseUnits: 3, baseCycle: 9, unlockCost: 1e9, baseCost: 3e8, costGrowth: 1.15, logistics: 8 },
-    { id: 'ruby', product: 'Ruby-Tafel', productPlural: 'Ruby-Tafeln', machine: 'Ruby-Temperieranlage', unitValue: 8e7, baseUnits: 3, baseCycle: 10, unlockCost: 3e10, baseCost: 8e9, costGrowth: 1.15, logistics: 8 },
-    { id: 'signature', product: 'Signature-Box', productPlural: 'Signature-Boxen', machine: 'Geschenkbox-Presse', unitValue: 1.6e9, baseUnits: 3, baseCycle: 12, unlockCost: 1e12, baseCost: 3e11, costGrowth: 1.15, logistics: 8 },
+    { id: 'nougat', product: 'Haselnuss-Nougat', productPlural: 'Haselnuss-Nougats', machine: 'Nougat-Mélangeur', unitValue: 4e6, baseUnits: 3, baseCycle: 9, unlockCost: 3e9, baseCost: 3e8, costGrowth: 1.18, logistics: 8 },
+    { id: 'ruby', product: 'Ruby-Tafel', productPlural: 'Ruby-Tafeln', machine: 'Ruby-Temperieranlage', unitValue: 8e7, baseUnits: 3, baseCycle: 10, unlockCost: 3e11, baseCost: 8e9, costGrowth: 1.18, logistics: 8 },
+    { id: 'signature', product: 'Signature-Box', productPlural: 'Signature-Boxen', machine: 'Geschenkbox-Presse', unitValue: 1.6e9, baseUnits: 3, baseCycle: 12, unlockCost: 3e13, baseCost: 3e11, costGrowth: 1.18, logistics: 8 },
+    // 0.9.0: the art floors, built only with enough crowns (owned, spent ones count too)
+    { id: 'sculptures', product: 'Schokoladen-Skulptur', productPlural: 'Schokoladen-Skulpturen', machine: 'Gießformen-Karussell', unitValue: 3.2e10, baseUnits: 3, baseCycle: 14, unlockCost: 1e15, baseCost: 3e14, costGrowth: 1.18, logistics: 8, crowns: 750 },
+    { id: 'gallery', product: 'Schokoladenrelief', productPlural: 'Schokoladenreliefs', machine: 'Prägeanlage', unitValue: 6.4e11, baseUnits: 3, baseCycle: 16, unlockCost: 1e18, baseCost: 3e17, costGrowth: 1.18, logistics: 8, crowns: 2000 },
   ],
 
   floorMilestones: [
@@ -202,17 +207,25 @@ export const BALANCE = {
      */
     divisor: 1e7,
     /**
-     * From this many crowns on the root gets steeper (4th root instead of
-     * square root): doubling the crowns then needs 16× the earnings instead
-     * of 4×, which keeps late runs from collapsing to a few minutes.
-     * 0.8.0 used the cube root; 0.8.1 pairs the 4th root with the stronger
-     * logistics. Sales count from the last sale's earnings, so changing this
-     * never strands crowns already owned.
+     * From this many crowns on the root gets steeper (6th root instead of
+     * square root): doubling the crowns then needs 64× the earnings instead
+     * of 4×. Floors 6–10 multiply production by orders of magnitude, so a
+     * flatter tail let crowns run into the thousands within three hours.
+     * 0.8.0 used the cube root from 100, 0.8.1 the 4th root from 100, 0.9.0
+     * the 6th root from 50 (fitted with tests/campaign.long.test.ts).
+     * Sales count from the last sale's earnings, so changing this never
+     * strands crowns already owned.
      */
-    tailFrom: 100,
-    tailRoot: 4,
-    /** Income bonus per crown (+10 %, additive). */
+    tailFrom: 50,
+    tailRoot: 6,
+    /** Income bonus per crown (+10 %, additive) … */
     perCrown: 0.1,
+    /**
+     * … for the first 100 crowns. Beyond that the bonus grows with the square
+     * root (0.9.0): 400 crowns count like 200, 3.000 like 548. Without this a
+     * few thousand crowns made money practically unlimited.
+     */
+    fullBonusUpTo: 100,
     /**
      * Estimate for the sale dialog: time to the 5th floor scales with
      * (crown factor)^-exponent. Fitted to the bot campaigns in

@@ -552,6 +552,16 @@ button {
   margin: 2px 0 8px;
   line-height: 1.35;
 }
+.flavor.crown-gate {
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(201, 155, 75, 0.55);
+  background: rgba(201, 155, 75, 0.12);
+}
+.flavor.crown-gate.locked {
+  border-color: rgba(122, 31, 43, 0.5);
+  background: rgba(122, 31, 43, 0.08);
+}
 .stats {
   width: 100%;
   border-collapse: separate;

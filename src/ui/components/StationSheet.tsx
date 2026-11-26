@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
-import { BALANCE, type LogisticsMilestone, type Milestone } from '../../config/balance';
+import { BALANCE, type FloorDef, type LogisticsMilestone, type Milestone } from '../../config/balance';
 import { BONUS_INFO, FLOOR_FLAVOR, bonusTitle } from '../../config/content';
 import { formatMoney, formatMultiplier, formatNumber, formatRate } from '../../core/format';
 import { quoteUpgrade } from '../../sim/actions';
-import { analyzeFlow, floorIndex, floorStatsAt, floorUnlockCost, liftStatsAt, managerOf, nextFloorMilestone, nextLogisticsMilestone, previousMilestoneLevel, shipStatsAt, oberhausFactor } from '../../sim/formulas';
+import { analyzeFlow, crownsMissingFor, floorIndex, floorStatsAt, floorUnlockCost, liftStatsAt, managerOf, nextFloorMilestone, nextLogisticsMilestone, previousMilestoneLevel, shipStatsAt, oberhausFactor } from '../../sim/formulas';
 import type { BuyMode, StationId } from '../../sim/types';
 import { useGameVersion, useStore } from '../useGame';
 import { Sheet } from './Hud';
@@ -200,11 +200,12 @@ export function UnlockSheet({ floor, onClose }: { floor: number; onClose: () => 
   const store = useStore();
   const s = store.state;
   const n = s.settings.notation;
-  const def = BALANCE.floors[floor] as (typeof BALANCE.floors)[number] & { logistics?: number };
+  const def = BALANCE.floors[floor] as FloorDef | undefined;
   if (!def || s.floors[floor].unlocked) return null;
   const cost = floorUnlockCost(floor);
   const st = floorStatsAt(s, floor, 1);
-  const can = s.money.gte(cost);
+  const crownsMissing = crownsMissingFor(s, floor);
+  const can = s.money.gte(cost) && crownsMissing === 0;
   const prevUnlocked = floor === 0 || s.floors[floor - 1].unlocked;
   return (
     <Sheet title={`Etage ${floor + 1}: ${def.productPlural}`} sub={def.machine} icon={<IconProduct floor={floor} size={42} />} onClose={onClose}>
@@ -226,6 +227,12 @@ export function UnlockSheet({ floor, onClose }: { floor: number; onClose: () => 
           Achtung: Jede neue Etage verlängert die Fahrt des Aufzugs. Behalte die Logistik im Blick.
         </p>
       )}
+      {def.crowns ? (
+        <p className={`flavor crown-gate${crownsMissing > 0 ? ' locked' : ''}`} style={{ marginTop: 8 }} data-testid="crown-gate">
+          <b>Kronen-Siegel:</b> Diese Etage lässt sich erst ab {def.crowns} Kronen bauen. Ausgegebene Kronen zählen mit.
+          {crownsMissing > 0 ? ` Dir fehlen noch ${crownsMissing}.` : ' Bedingung erfüllt.'}
+        </p>
+      ) : null}
       <button
         className="btn gold block buy-btn"
         disabled={!can || !prevUnlocked}
@@ -237,7 +244,7 @@ export function UnlockSheet({ floor, onClose }: { floor: number; onClose: () => 
         {!can && <IconLock size={18} />} Etage bauen
         <span className="sub">{formatMoney(cost, n)}</span>
       </button>
-      {!can && <div className="missing">Es fehlen noch {formatMoney(cost.sub(s.money), n)}.</div>}
+      {s.money.lt(cost) && <div className="missing">Es fehlen noch {formatMoney(cost.sub(s.money), n)}.</div>}
     </Sheet>
   );
 }

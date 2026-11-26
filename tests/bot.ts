@@ -15,7 +15,7 @@ import {
   tapStation,
   unlockFloor,
 } from '../src/sim/actions';
-import { analyzeFlow, floorStatsAt, floorUnlockCost, managerHireCost } from '../src/sim/formulas';
+import { analyzeFlow, crownsMissingFor, floorStatsAt, floorUnlockCost, managerHireCost } from '../src/sim/formulas';
 import { createGame } from '../src/sim/init';
 import { RESEARCH, type ResearchId } from '../src/config/research';
 import { nextRank, startResearch, whyNot } from '../src/sim/research';
@@ -43,6 +43,8 @@ export interface BotOptions {
   research?: boolean;
   /** Take Lieferverträge (default false): the best-paying offer that looks doable, collect when delivered. */
   contracts?: boolean;
+  /** Save up for the next floor once it is this many seconds of income away (default 480). */
+  saveForFloor?: number;
 }
 
 export interface BotEvent {
@@ -63,6 +65,12 @@ export interface BotResult {
 }
 
 type Option = { kind: 'upgrade'; station: StationId } | { kind: 'unlock'; floor: number };
+
+/** Next locked floor, unless it still waits for crowns (floors 9 and 10). */
+function buildableFloor(s: GameState): number | null {
+  const i = nextLockedFloor(s);
+  return i !== null && crownsMissingFor(s, i) === 0 ? i : null;
+}
 
 export function runBot(opts: BotOptions): BotResult {
   const s = opts.initial ?? createGame(0, opts.seed ?? 4242);
@@ -103,7 +111,7 @@ export function runBot(opts: BotOptions): BotResult {
     {
       const any =
         ['lift', 'ship', ...s.floors.map((f, i) => (f.unlocked ? `f${i}` : null)).filter(Boolean)].some((st) => quoteUpgrade(s, st as StationId, 1).affordable) ||
-        (nextLockedFloor(s) !== null && s.money.gte(floorUnlockCost(nextLockedFloor(s) as number)));
+        (buildableFloor(s) !== null && s.money.gte(floorUnlockCost(buildableFloor(s) as number)));
       if (!any && starvedFrom === null) starvedFrom = t;
       if (any && starvedFrom !== null) {
         starvedSpans.push({ from: starvedFrom, to: t });
@@ -209,7 +217,7 @@ export function runBot(opts: BotOptions): BotResult {
         const gain = Decimal.min(stageRate(fb), cap).sub(Decimal.min(stageRate(fa), cap)).mul(fa.priceFactor).max(0);
         opts2.push({ o: { kind: 'upgrade', station: st }, gain, cost: qu.cost });
       }
-      const lock = nextLockedFloor(s);
+      const lock = buildableFloor(s);
       if (lock !== null && s.money.gte(floorUnlockCost(lock))) {
         // Players build a new floor as soon as they can afford it.
         unlockFloor(s, lock);
@@ -253,7 +261,7 @@ export function runBot(opts: BotOptions): BotResult {
       if (lock !== null) {
         const unlock = floorUnlockCost(lock);
         const secs = unlock.sub(s.money).div(base.max(1e-9)).toNumber();
-        if (secs < 480 && best.o.kind === 'upgrade' && best.cost.gt(unlock.mul(0.02))) break;
+        if (secs < (opts.saveForFloor ?? 480) && best.o.kind === 'upgrade' && best.cost.gt(unlock.mul(0.02))) break;
       }
       let pick = best;
       if (s.money.lt(best.cost)) {
