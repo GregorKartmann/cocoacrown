@@ -8,7 +8,7 @@
  * offline catch-up.
  */
 import { ACHIEVEMENTS, DAILY_BY_ID, DAILY_POOL, DAILY_REWARD, DAILY_SLOTS, STREAK, type Achievement, type DailyMetric, type DailyTemplate, type GoalReward } from '../config/goals';
-import { D, dmax, type Decimal } from '../core/num';
+import { D, Decimal, dmax } from '../core/num';
 import { addResearchPoints } from './research';
 import { analyzeFlow, bulkUpgradeCost, costFactor, costParams, managerHireCost, stationLevel } from './formulas';
 import type { DailyState, GameState, StationId } from './types';
@@ -105,18 +105,51 @@ export function claimAchievement(s: GameState, id: string): GoalReward | null {
   return a.reward;
 }
 
-/** Lifetime records the achievements read; called after level purchases and floor builds. */
+/** Lifetime records the achievements read; called after level purchases, floor builds and manager moves. */
 export function updateRecords(s: GameState): void {
+  const r = s.stats.records;
   let lv = s.stats.maxFloorLevel;
-  let fl = s.stats.maxFloors;
-  let count = 0;
-  for (const f of s.floors) {
-    if (!f.unlocked) continue;
-    count++;
+  const fl = s.stats.maxFloors;
+  const levels: number[] = [];
+  let staffed = 0;
+  s.floors.forEach((f, i) => {
+    if (!f.unlocked) return;
+    levels.push(f.level);
     if (f.level > lv) lv = f.level;
-  }
+    if (f.level > (r.floorBest[i] ?? 0)) r.floorBest[i] = f.level;
+    if (f.managerId) staffed++;
+  });
+  levels.sort((a, b) => b - a);
+  levels.forEach((l, k) => {
+    if (l > (r.levelRank[k] ?? 0)) r.levelRank[k] = l;
+  });
   s.stats.maxFloorLevel = lv;
-  s.stats.maxFloors = Math.max(fl, count);
+  s.stats.maxFloors = Math.max(fl, levels.length);
+  if (s.lift.level > r.liftBest) r.liftBest = s.lift.level;
+  if (s.ship.level > r.shipBest) r.shipBest = s.ship.level;
+  if (s.lift.managerId) staffed++;
+  if (s.ship.managerId) staffed++;
+  if (staffed > r.maxStaffed) r.maxStaffed = staffed;
+}
+
+/** Share by which production, lift and vans may differ and still count as "Perfekter Fluss". */
+export const FLOW_TOLERANCE = 1.1;
+
+/**
+ * Once per game second of active play: best income per second and the
+ * "Perfekter Fluss" stretch (all three stages within 10 % of each other).
+ */
+export function tickLiveRecords(s: GameState): void {
+  const r = s.stats.records;
+  const f = analyzeFlow(s);
+  const income = Math.min(1e300, f.income.toNumber());
+  if (Number.isFinite(income) && income > r.bestIncome) r.bestIncome = income;
+  const lo = Decimal.min(f.production, Decimal.min(f.lift, f.ship));
+  const hi = Decimal.max(f.production, Decimal.max(f.lift, f.ship));
+  if (lo.gt(0) && hi.lte(lo.mul(FLOW_TOLERANCE))) {
+    r.flowNow += 1;
+    if (r.flowNow > r.bestFlow) r.bestFlow = r.flowNow;
+  } else r.flowNow = 0;
 }
 
 /* ------------------------------------------------------------------------- */

@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.9.0 (Etagen 9 und 10, Spätspiel-Balancing)';
+export const APP_VERSION = '0.10.0 (Meilensteine, Platin und Diamant)';
 
 /** Shown in Settings so players and testers see what is finished and what is planned. */
 export const DEV_STATUS: { text: string; done: boolean }[] = [

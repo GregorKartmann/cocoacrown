@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { ACHIEVEMENTS, BADGE_ART, CATEGORIES, DAILY_BY_ID, DAILY_REWARD, GOAL_ICON, STREAK, streakBadge, type DailyTemplate } from '../../config/goals';
+import { ACHIEVEMENTS, BADGE_ART, BADGE_NAME, CATEGORIES, DAILY_BY_ID, DAILY_REWARD, GOAL_ICON, STREAK, streakBadge, type Achievement, type DailyTemplate } from '../../config/goals';
 import { QUESTS } from '../../config/quests';
-import { formatDuration, formatMoney, formatNumber } from '../../core/format';
+import { formatDuration, formatMoney, formatNumber, formatRate } from '../../core/format';
 import { artUrl } from '../../render/assets';
 import { achievementProgress, claimableAchievements, claimableDaily, isClaimed, rewardText, secondsToMidnight, visibleStreak } from '../../sim/goals';
 import type { GameState } from '../../sim/types';
@@ -128,6 +128,89 @@ function DailyTab() {
   );
 }
 
+/** Groups the tiers of a series into one entry; single achievements stay alone. */
+function groupSeries(list: Achievement[]): Achievement[][] {
+  const out: Achievement[][] = [];
+  const bySeries = new Map<string, Achievement[]>();
+  for (const a of list) {
+    if (!a.series) {
+      out.push([a]);
+      continue;
+    }
+    let g = bySeries.get(a.series);
+    if (!g) {
+      g = [];
+      bySeries.set(a.series, g);
+      out.push(g);
+    }
+    g.push(a);
+  }
+  return out;
+}
+
+function progressText(s: GameState, a: Achievement, p: number): string {
+  if (a.text) return a.text(s);
+  const n = s.settings.notation;
+  if (a.unit === 'time') return `${formatDuration(p)} / ${formatDuration(a.target)}`;
+  if (a.unit === 'money') return `${formatMoney(p, n)} / ${formatMoney(a.target, n)}`;
+  if (a.unit === 'rate') return `${formatRate(p, n)} / ${formatRate(a.target, n)}`;
+  return `${formatNumber(p, n, 0)}/${formatNumber(a.target, n, 0)}`;
+}
+
+function AchievementRow({ tiers }: { tiers: Achievement[] }) {
+  const store = useStore();
+  const s = store.state;
+  // the lowest tier not yet collected; a finished series shows its top tier
+  const idx = tiers.findIndex((t) => !isClaimed(s, t.id));
+  const a = tiers[idx === -1 ? tiers.length - 1 : idx];
+  const p = achievementProgress(s, a);
+  const reached = p >= a.target;
+  const got = isClaimed(s, a.id);
+  const done = tiers.filter((t) => isClaimed(s, t.id)).length;
+  return (
+    <div className={`ach-row ${reached ? 'reached' : ''} ${got ? 'claimed' : ''}`} data-testid={`ach-${a.id}`}>
+      <span className="ach-badge">
+        <Art k={BADGE_ART[a.badge]} size={44} className="medal" />
+        <Art k={GOAL_ICON[a.icon]} size={20} className="ach-symbol" />
+      </span>
+      <div className="goal-body">
+        <b>{a.title}</b>
+        {a.hint && <small className="ach-hint">{a.hint}</small>}
+        <div className="goal-meta">
+          <div className="bar gold">
+            <i style={{ width: `${Math.min(1, p / a.target) * 100}%` }} />
+          </div>
+          <span>{progressText(s, a, p)}</span>
+        </div>
+        {tiers.length > 1 ? (
+          <div className="ach-tiers" aria-label={`Stufe ${Math.min(done + 1, tiers.length)} von ${tiers.length}`}>
+            {tiers.map((t) => {
+              const state = isClaimed(s, t.id) ? 'got' : achievementProgress(s, t) >= t.target ? 'ready' : 'open';
+              return (
+                <span key={t.id} className={`tier ${state} ${t.id === a.id ? 'now' : ''}`} title={`${BADGE_NAME[t.badge]}: ${t.title}`}>
+                  <Art k={BADGE_ART[t.badge]} size={17} className="tier-medal" />
+                </span>
+              );
+            })}
+            <small className="ach-reward">{got ? 'Alle Stufen abgeholt' : `${BADGE_NAME[a.badge]} · ${rewardText(a.reward)}`}</small>
+          </div>
+        ) : (
+          <small className="ach-reward">Belohnung: {rewardText(a.reward)}</small>
+        )}
+      </div>
+      {got ? (
+        <span className="goal-done">
+          <Art k={GOAL_ICON.done} size={26} />
+        </span>
+      ) : reached ? (
+        <button className="btn gold small" onClick={() => store.claimAchievement(a.id)} data-testid={`claim-ach-${a.id}`}>
+          Abholen
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 function AchievementsTab() {
   const store = useStore();
   const s = store.state;
@@ -137,6 +220,13 @@ function AchievementsTab() {
     <>
       <div className="ach-summary">
         <b>{claimed}</b> von {total} Erfolgen abgeholt
+        <span className="ach-medals">
+          {(['platin', 'diamant'] as const).map((b) => (
+            <span key={b}>
+              <Art k={BADGE_ART[b]} size={18} /> {ACHIEVEMENTS.filter((a) => a.badge === b && isClaimed(s, a.id)).length}
+            </span>
+          ))}
+        </span>
       </div>
       {CATEGORIES.map((c) => {
         const list = ACHIEVEMENTS.filter((a) => a.category === c.id);
@@ -147,39 +237,9 @@ function AchievementsTab() {
               <Art k={c.badge} size={34} />
               <span>{c.name}</span>
             </div>
-            {list.map((a) => {
-              const p = achievementProgress(s, a);
-              const reached = p >= a.target;
-              const got = isClaimed(s, a.id);
-              const progressText = a.category === 'Offline-Fortschritt' ? `${formatDuration(p)} / ${formatDuration(a.target)}` : `${formatNumber(p, s.settings.notation, 0)}/${formatNumber(a.target, s.settings.notation, 0)}`;
-              return (
-                <div className={`ach-row ${reached ? 'reached' : ''} ${got ? 'claimed' : ''}`} key={a.id} data-testid={`ach-${a.id}`}>
-                  <span className="ach-badge">
-                    <Art k={BADGE_ART[a.badge]} size={44} className="medal" />
-                    <Art k={GOAL_ICON[a.icon]} size={20} className="ach-symbol" />
-                  </span>
-                  <div className="goal-body">
-                    <b>{a.title}</b>
-                    <div className="goal-meta">
-                      <div className="bar gold">
-                        <i style={{ width: `${(p / a.target) * 100}%` }} />
-                      </div>
-                      <span>{progressText}</span>
-                    </div>
-                    <small className="ach-reward">Belohnung: {rewardText(a.reward)}</small>
-                  </div>
-                  {got ? (
-                    <span className="goal-done">
-                      <Art k={GOAL_ICON.done} size={26} />
-                    </span>
-                  ) : reached ? (
-                    <button className="btn gold small" onClick={() => store.claimAchievement(a.id)} data-testid={`claim-ach-${a.id}`}>
-                      Abholen
-                    </button>
-                  ) : null}
-                </div>
-              );
-            })}
+            {groupSeries(list).map((tiers) => (
+              <AchievementRow key={tiers[0].id} tiers={tiers} />
+            ))}
           </div>
         );
       })}

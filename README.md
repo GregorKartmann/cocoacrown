@@ -4,7 +4,7 @@
 
 Der Branch `gh-pages` enthält den fertigen Build (`npm run build` → `dist/`).
 
-Idle-Tycoon-Spiel als Webapp und installierbare PWA. Version 0.9.0 mit gemaltem Asset-Pack, Prestige („Marke verkaufen“ gegen Kronen) samt Kronen-Schatzkammer, Lieferverträgen, Rezeptlabor (Forschung), Erfolgen, Tageszielen und dem Advent-Event „Lebkuchen-Manufaktur“: die Manufaktur mit zehn Produktionsetagen (Etage 9 und 10 öffnen sich erst mit genug Kronen), Lastenaufzug, Lieferwagen, Managern, Aufträgen, Goldener Kakaobohne, Offline-Progression und lokalen Spielständen.
+Idle-Tycoon-Spiel als Webapp und installierbare PWA. Version 0.10.0 mit gemaltem Asset-Pack, Prestige („Marke verkaufen“ gegen Kronen) samt Kronen-Schatzkammer, Lieferverträgen, Rezeptlabor (Forschung), 114 Erfolgen in fünf Medaillenstufen bis Platin und Diamant, Tageszielen und dem Advent-Event „Lebkuchen-Manufaktur“: die Manufaktur mit zehn Produktionsetagen (Etage 9 und 10 öffnen sich erst mit genug Kronen), Lastenaufzug, Lieferwagen, Managern, Aufträgen, Goldener Kakaobohne, Offline-Progression und lokalen Spielständen.
 
 ## Starten
 
@@ -73,4 +73,5 @@ python3 -I scripts/prepare-goals.py <Pfad/zu/Cocoa_Crown_Erfolge> .
 python3 -I scripts/prepare-winter.py <Pfad/zu/Cocoa_Crown_Winter_Pack> .
 python3 -I scripts/prepare-contracts.py <Pfad/zu/Cocoa_Crown_Vertraege_und_Schatzkammer> .
 python3 -I scripts/prepare-floors910.py <Pfad/zu/Cocoa_Crown_Etagen_09_10> .
+python3 -I scripts/prepare-medals.py <medaille_platin.png> <medaille_diamant.png> .
 ```

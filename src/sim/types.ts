@@ -118,6 +118,33 @@ export interface Stats {
   /** Lifetime records for achievements (kept through the brand sale). */
   maxFloorLevel: number;
   maxFloors: number;
+  records: Records;
+}
+
+/** More lifetime records for the 0.10.0 milestones (all survive the brand sale). */
+export interface Records {
+  /** Best level ever per floor (index = floor). */
+  floorBest: number[];
+  /** levelRank[k] = best level that k + 1 floors held at the same time. */
+  levelRank: number[];
+  liftBest: number;
+  shipBest: number;
+  /** Highest income per second (€) seen during active play, capped at 1e300. */
+  bestIncome: number;
+  /** Seconds of the current stretch in which production, lift and vans are within 10 %. */
+  flowNow: number;
+  bestFlow: number;
+  /** Most crowns from a single brand sale. */
+  bestSale: number;
+  /** Fastest time (s) from a brand sale to the 8th floor. */
+  bestFloor8: number | null;
+  /** Contracts collected in a row without a missed deadline. */
+  contractStreak: number;
+  bestContractStreak: number;
+  /** Customers that received at least one contract. */
+  customers: string[];
+  /** Most stations run by a manager at the same time. */
+  maxStaffed: number;
 }
 
 export interface PrestigeState {

@@ -1,7 +1,7 @@
 import { BALANCE } from '../config/balance';
 import { deser, ser } from '../core/num';
-import { SAVE_VERSION, defaultSettings } from '../sim/init';
-import type { BuyMode, ContractOffer, ContractsState, GameState, LiftPhase, Manager, ManagerBonus, ManagerCategory, StationId, VanPhase, WinterState } from '../sim/types';
+import { SAVE_VERSION, defaultRecords, defaultSettings } from '../sim/init';
+import type { BuyMode, ContractOffer, ContractsState, GameState, LiftPhase, Manager, ManagerBonus, ManagerCategory, Records, StationId, VanPhase, WinterState } from '../sim/types';
 import { migrate } from './migrations';
 import { RESEARCH_BY_ID, RESEARCH_IDS, type ResearchId } from '../config/research';
 import { defaultResearch } from '../sim/research';
@@ -46,7 +46,11 @@ export function toPlain(s: GameState): Record<string, unknown> {
     floors: s.floors.map((f) => ({ ...f, buffer: ser(f.buffer) })),
     lift: { ...s.lift, cargo: ser(s.lift.cargo) },
     ship: { ...s.ship, depot: ser(s.ship.depot), vans: s.ship.vans.map((v) => ({ ...v, cargo: ser(v.cargo) })) },
-    stats: { ...s.stats, totalEarned: ser(s.stats.totalEarned) },
+    stats: {
+      ...s.stats,
+      totalEarned: ser(s.stats.totalEarned),
+      records: { ...s.stats.records, floorBest: [...s.stats.records.floorBest], levelRank: [...s.stats.records.levelRank], customers: [...s.stats.records.customers] },
+    },
     managers: s.managers.map((m) => ({ ...m, look: { ...m.look } })),
     boosts: s.boosts.map((b) => ({ ...b })),
     golden: { ...s.golden, active: s.golden.active ? { ...s.golden.active } : null },
@@ -126,6 +130,29 @@ function num(v: unknown, what: string, min = -Infinity, max = Infinity): number 
 function int(v: unknown, what: string, min: number, max: number): number {
   return Math.round(num(v, what, min, max));
 }
+/** Lifetime records (0.10.0); anything missing or broken falls back to the defaults. */
+function decodeRecords(v: unknown): Records {
+  const r = defaultRecords();
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return r;
+  const o = v as Obj;
+  const n = (x: unknown, d: number, max = Number.MAX_SAFE_INTEGER) => (typeof x === 'number' && Number.isFinite(x) ? Math.min(max, Math.max(0, x)) : d);
+  const levels = (x: unknown, d: number[]) => (Array.isArray(x) ? d.map((dv, i) => Math.round(n(x[i], dv, 1e6))) : d);
+  r.floorBest = levels(o.floorBest, r.floorBest);
+  r.levelRank = levels(o.levelRank, r.levelRank);
+  r.liftBest = Math.round(n(o.liftBest, 1, 1e6));
+  r.shipBest = Math.round(n(o.shipBest, 1, 1e6));
+  r.bestIncome = n(o.bestIncome, 0, 1e300);
+  r.flowNow = n(o.flowNow, 0, 1e9);
+  r.bestFlow = n(o.bestFlow, 0, 1e9);
+  r.bestSale = Math.round(n(o.bestSale, 0));
+  r.bestFloor8 = typeof o.bestFloor8 === 'number' && Number.isFinite(o.bestFloor8) ? Math.max(0, o.bestFloor8) : null;
+  r.contractStreak = Math.round(n(o.contractStreak, 0));
+  r.bestContractStreak = Math.round(n(o.bestContractStreak, 0));
+  r.customers = Array.isArray(o.customers) ? [...new Set(o.customers.filter((c): c is string => typeof c === 'string' && c in CUSTOMER_BY_ID))] : [];
+  r.maxStaffed = Math.round(n(o.maxStaffed, 0, 64));
+  return r;
+}
+
 function bool(v: unknown, what: string): boolean {
   if (typeof v !== 'boolean') throw new SaveError(`Ungültiger Wert: ${what}`);
   return v;
@@ -276,6 +303,7 @@ export function fromPlain(o: Obj): GameState {
       offlineSeconds: num(stats.offlineSeconds, 'offlineSeconds', 0),
       maxFloorLevel: int(stats.maxFloorLevel ?? 1, 'maxFloorLevel', 1, 1e6),
       maxFloors: int(stats.maxFloors ?? 1, 'maxFloors', 1, 64),
+      records: decodeRecords(stats.records),
     },
     quest: { index: int(obj(o.quest, 'quest').index, 'quest.index', 0, 10000) },
     prestige: {

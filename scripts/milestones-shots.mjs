@@ -1,0 +1,46 @@
+// Screenshots of the achievements list with Platin and Diamant tiers (needs `vite preview` and ?debug).
+import { chromium } from '@playwright/test';
+const [url, out] = process.argv.slice(2);
+const browser = await chromium.launch({ channel: 'chrome', args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+const ctx = await browser.newContext({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+const page = await ctx.newPage();
+const errs = [];
+page.on('pageerror', (e) => errs.push(e.message));
+await page.goto(url);
+await page.waitForSelector('[data-testid=money]');
+await page.waitForTimeout(800);
+await page.evaluate(() => {
+  const st = window.__cc.store;
+  const s = st.state;
+  // a late-game player: many records, some tiers already collected
+  Object.assign(s.stats, { batches: 150000, liftTrips: 12000, vanTrips: 30000, skillsUsed: 700, goldenCaught: 230, managersHired: 18 });
+  s.stats.totalEarned = s.stats.totalEarned.constructor.fromNumber ? s.stats.totalEarned.add(2e18) : s.stats.totalEarned;
+  Object.assign(s.stats.records, { liftBest: 320, shipBest: 300, bestIncome: 3e15, bestFlow: 75, bestSale: 420, bestFloor8: 290, bestContractStreak: 64, maxStaffed: 12 });
+  s.stats.records.levelRank = [180, 150, 130, 120, 110, 100, 90, 80, 60, 30];
+  s.stats.records.floorBest = [180, 150, 130, 120, 110, 100, 90, 80, 60, 30];
+  s.stats.maxFloorLevel = 180;
+  s.stats.maxFloors = 10;
+  s.prestige.crowns = 1800;
+  s.prestige.runs = 14;
+  s.contracts.delivered = 140;
+  s.goals.claimed = ['charges_10', 'charges_250', 'charges_2000', 'upgrade_10', 'upgrade_50', 'upgrade_100', 'lift_10', 'lift_100', 'lift_500', 'floor_5', 'floor_6', 'floor_7', 'floor_8', 'floor_9', 'floor_10', 'trucks_10', 'trucks_100', 'trucks_500', 'trucks_25000'];
+  st.notify(true);
+});
+await page.click('[data-testid=nav-goals]');
+await page.waitForTimeout(600);
+await page.click('[data-testid=tab-achievements]');
+await page.waitForTimeout(900);
+await page.screenshot({ path: `${out}/m1-top.png` });
+await page.evaluate(() => document.querySelector('.sheet-body')?.scrollBy(0, 640));
+await page.waitForTimeout(400);
+await page.screenshot({ path: `${out}/m2-mid.png` });
+await page.locator('[data-testid=claim-ach-charges_100000]').click();
+await page.waitForTimeout(700);
+await page.evaluate(() => document.querySelector('.sheet-body')?.scrollTo(0, 0));
+await page.waitForTimeout(400);
+await page.screenshot({ path: `${out}/m3-claimed.png` });
+await page.evaluate(() => document.querySelector('.sheet-body')?.scrollTo(0, 99999));
+await page.waitForTimeout(400);
+await page.screenshot({ path: `${out}/m4-bottom.png` });
+console.log(JSON.stringify(await page.evaluate(() => ({ claimed: window.__cc.store.state.goals.claimed.length }))), errs);
+await browser.close();

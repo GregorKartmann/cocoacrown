@@ -96,6 +96,12 @@ export function unlockFloor(s: GameState, i: number): boolean {
   if (back) assignManager(s, back.id, station);
   for (const m of s.managers) if (m.home === station) m.home = null;
   if (i === PRESTIGE_FLOOR) noteFloor5(s);
+  if (i === 7 && s.prestige.runs > 0) {
+    const t = s.stats.playSeconds - s.prestige.runStartPlay;
+    const r = s.stats.records;
+    if (r.bestFloor8 === null || t < r.bestFloor8) r.bestFloor8 = t;
+  }
+  updateRecords(s);
   return true;
 }
 
@@ -176,6 +182,7 @@ export function assignManager(s: GameState, managerId: string, station: StationI
   }
   m.assignedTo = station;
   if (station) m.home = null;
+  updateRecords(s);
   return true;
 }
 
@@ -264,6 +271,7 @@ export function sellBrand(s: GameState): number {
   if (gained < 1 || !prestigeUnlocked(s)) return 0;
   s.prestige.crowns += gained;
   s.prestige.runs += 1;
+  if (gained > s.stats.records.bestSale) s.stats.records.bestSale = gained;
   addResearchPoints(s, POINTS.brandSale);
   s.prestige.runStartEarned = s.stats.totalEarned;
   s.prestige.runStartPlay = s.stats.playSeconds;

@@ -51,9 +51,17 @@
   "h": 200,
   "w": 145
  },
+ "abzeichen/medaille_diamant": {
+  "h": 200,
+  "w": 145
+ },
  "abzeichen/medaille_gold": {
   "h": 200,
   "w": 147
+ },
+ "abzeichen/medaille_platin": {
+  "h": 200,
+  "w": 146
  },
  "abzeichen/medaille_silber": {
   "h": 200,

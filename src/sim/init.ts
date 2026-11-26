@@ -5,7 +5,7 @@ import { defaultResearch } from './research';
 import { freshWinter } from './winter';
 import { defaultContracts } from './contracts';
 import { randomSeed } from './rng';
-import type { FloorState, GameState, LiftState, PrestigeState, Settings, ShipState } from './types';
+import type { FloorState, GameState, LiftState, PrestigeState, Records, Settings, ShipState } from './types';
 
 /**
  * v2: prestige ("Marke verkaufen"), manager home stations, smooth tap time.
@@ -14,8 +14,9 @@ import type { FloorState, GameState, LiftState, PrestigeState, Settings, ShipSta
  * v5: Advent-Event „Lebkuchen-Manufaktur“ (winter state), Winterdeko-Einstellung.
  * v6: Lieferverträge (contracts), Kronen-Schatzkammer (prestige.spent/treasury).
  * v7: Etagen 9 und 10 (Skulpturen-Atelier, Schokoladen-Galerie).
+ * v8: Meilensteine (stats.records for the Platin/Diamant achievements).
  */
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 export function defaultSettings(): Settings {
   return { notation: 'short', sound: true, music: true, haptics: true, buyMode: 1, winterDecor: true };
@@ -63,6 +64,24 @@ export function freshShip(): ShipState {
   };
 }
 
+export function defaultRecords(): Records {
+  return {
+    floorBest: BALANCE.floors.map((_, i) => (i === 0 ? 1 : 0)),
+    levelRank: BALANCE.floors.map((_, i) => (i === 0 ? 1 : 0)),
+    liftBest: 1,
+    shipBest: 1,
+    bestIncome: 0,
+    flowNow: 0,
+    bestFlow: 0,
+    bestSale: 0,
+    bestFloor8: null,
+    contractStreak: 0,
+    bestContractStreak: 0,
+    customers: [],
+    maxStaffed: 0,
+  };
+}
+
 export function defaultPrestige(): PrestigeState {
   return { crowns: 0, runs: 0, runStartEarned: D(0), runStartPlay: 0, bestFloor5: null, spent: 0, treasury: {} };
 }
@@ -95,6 +114,7 @@ export function createGame(now = Date.now(), seed = randomSeed(), settings: Sett
       offlineSeconds: 0,
       maxFloorLevel: 1,
       maxFloors: 1,
+      records: defaultRecords(),
     },
     quest: { index: 0 },
     prestige: defaultPrestige(),

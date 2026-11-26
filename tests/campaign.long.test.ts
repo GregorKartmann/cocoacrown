@@ -16,6 +16,7 @@ import { createGame } from '../src/sim/init';
 import { buyTreasury, treasuryCost } from '../src/sim/treasury';
 import type { GameState } from '../src/sim/types';
 import { runBot } from './bot';
+import { ACHIEVEMENTS } from '../src/config/goals';
 
 const ENV = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env ?? {};
 const HOURS = Number(ENV.CAMPAIGN_HOURS ?? 30);
@@ -51,6 +52,7 @@ export function longCampaign(attentive: boolean, hours: number) {
   let s = createGame(0, base.seed);
   let total = 0;
   const first: Record<string, number> = {};
+  const reachedAt: Record<string, number> = {};
   const runs: { min: number; floors: number; gained: number; crowns: number; bottleneck: string; flow: string; levels: string }[] = [];
   while (total < hours * 3600 && runs.length < 80) {
     let f5: number | null = null;
@@ -98,15 +100,20 @@ export function longCampaign(attentive: boolean, hours: number) {
     s = res.state;
     const runSec = s.stats.playSeconds - s.prestige.runStartPlay;
     total += runSec;
+    for (const a of ACHIEVEMENTS) if (reachedAt[a.id] === undefined && a.value(s) >= a.target) reachedAt[a.id] = total;
     const fl = analyzeFlow(s);
     const flow = `P ${fl.production.toExponential(1)} L ${fl.lift.toExponential(1)} V ${fl.ship.toExponential(1)}`;
     const floors = s.floors.filter((f) => f.unlocked).length;
     const levels = s.floors.filter((f) => f.unlocked).map((f) => f.level).join('/') + ` A${s.lift.level} V${s.ship.level}`;
     const gained = prestigeUnlocked(s) ? sellBrand(s) : 0;
     spendTreasury(s);
+    for (const a of ACHIEVEMENTS) if (reachedAt[a.id] === undefined && a.value(s) >= a.target) reachedAt[a.id] = total;
     runs.push({ min: runSec / 60, floors, gained, crowns: s.prestige.crowns, bottleneck: fl.bottleneck, flow: `${flow} Σ${s.stats.totalEarned.toExponential(1)} @${(total / 3600).toFixed(1)}h`, levels });
   }
-  return { runs, first, total };
+  const st = s.stats;
+  const stats = `Chargen ${st.batches}, Aufzugfahrten ${st.liftTrips}, Lieferfahrten ${st.vanTrips}, Fähigkeiten ${st.skillsUsed}, Bohnen ${st.goldenCaught}, Manager ${st.managersHired}, Verträge ${s.contracts.delivered}/${s.contracts.failed} (Ruf ${s.contracts.ruf}), Labor ${Object.values(s.research.ranks).reduce((x, y) => x + y, 0)}, bestes Etage-5-Tempo ${s.prestige.bestFloor5?.toFixed(0)} s, Umsatz ${st.totalEarned.toExponential(1)}`;
+  const ach = ACHIEVEMENTS.map((a) => `${a.id} ${reachedAt[a.id] === undefined ? '–' : (reachedAt[a.id] / 3600).toFixed(1) + 'h'}`).join(' · ');
+  return { runs, first, total, stats: `${stats}\n  Erfolge: ${ach}\n  Rekorde: ${JSON.stringify(s.stats.records)}` };
 }
 
 describe.skipIf(!ENV.LONG_CAMPAIGN)('Langzeit-Kampagne', () => {
@@ -117,6 +124,7 @@ describe.skipIf(!ENV.LONG_CAMPAIGN)('Langzeit-Kampagne', () => {
       const h = (x?: number) => (x === undefined ? '–' : `${(x / 3600).toFixed(1)} h`);
       console.log(
         `${attentive ? 'Aufmerksam' : 'Gelegentlich'} (${((Date.now() - t0) / 1000).toFixed(0)} s Rechenzeit, ${h(r.total)} gespielt)\n` +
+          `  ${r.stats}\n` +
           `  Etage 6 ${h(r.first.f6)} · Etage 8 ${h(r.first.f8)} · Etage 9 ${h(r.first.f9)} · Etage 10 ${h(r.first.f10)}\n` +
           r.runs
             .map((x, i) => `  ${String(i + 1).padStart(2)}: ${x.min.toFixed(0).padStart(4)} min, ${x.floors} Et., +${x.gained} → ${x.crowns} Kronen, ${x.bottleneck} (${x.flow}) ${x.levels}`)

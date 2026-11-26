@@ -51,9 +51,9 @@ describe('Kalender', () => {
 });
 
 describe('Erfolge', () => {
-  it('sind 32 Stück und lesen dauerhafte Zähler', () => {
-    expect(ACHIEVEMENTS.length).toBe(32);
-    expect(new Set(ACHIEVEMENTS.map((a) => a.id)).size).toBe(32);
+  it('sind 114 Stück (seit 0.10.0 mit Platin und Diamant) und lesen dauerhafte Zähler', () => {
+    expect(ACHIEVEMENTS.length).toBe(114);
+    expect(new Set(ACHIEVEMENTS.map((a) => a.id)).size).toBe(114);
   });
 
   it('werden erreicht, einmal abgeholt und geben ihre Belohnung', () => {

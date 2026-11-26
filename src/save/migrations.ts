@@ -15,6 +15,8 @@
  *   6 – Lieferverträge (board opens on the first load if the 2nd floor stands)
  *       and Kronen-Schatzkammer (no crowns spent yet)
  *   7 – floors 9 and 10 appended, locked
+ *   8 – stats.records (Meilensteine): level records taken from the current
+ *       game, everything else starts at zero
  */
 import { BALANCE } from '../config/balance';
 
@@ -61,6 +63,32 @@ export const MIGRATIONS: Record<number, Migration> = {
     stats.maxFloors = Math.max(1, open.length, reached5 ? 5 : 0);
     // daily state is created on load (time zone of this device)
     return { ...d, stats, goals: { claimed: [] }, rewards: { freeHires: 0, goldenBeans: 0 } };
+  },
+  7: (d) => {
+    const floors = Array.isArray(d.floors) ? (d.floors as Record<string, unknown>[]) : [];
+    const lvl = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? Math.max(1, Math.floor(x)) : 1);
+    const built = floors.map((f) => (f && f.unlocked ? lvl(f.level) : 0));
+    const ranked = built.filter((l) => l > 0).sort((a, b) => b - a);
+    const lift = (d.lift ?? {}) as Record<string, unknown>;
+    const ship = (d.ship ?? {}) as Record<string, unknown>;
+    const staffed = floors.filter((f) => f && f.unlocked && f.managerId).length + (lift.managerId ? 1 : 0) + (ship.managerId ? 1 : 0);
+    const stats = (d.stats ?? {}) as Record<string, unknown>;
+    const records = {
+      floorBest: BALANCE.floors.map((_, i) => built[i] ?? 0),
+      levelRank: BALANCE.floors.map((_, i) => ranked[i] ?? 0),
+      liftBest: lvl(lift.level),
+      shipBest: lvl(ship.level),
+      bestIncome: 0,
+      flowNow: 0,
+      bestFlow: 0,
+      bestSale: 0,
+      bestFloor8: null,
+      contractStreak: 0,
+      bestContractStreak: 0,
+      customers: [],
+      maxStaffed: staffed,
+    };
+    return { ...d, stats: { ...stats, records } };
   },
   6: (d) => {
     const floors = Array.isArray(d.floors) ? [...(d.floors as Record<string, unknown>[])] : [];

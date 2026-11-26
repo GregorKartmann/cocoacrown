@@ -1,4 +1,5 @@
 import { noteProduced, noteSold, tickContract } from './contracts';
+import { tickLiveRecords } from './goals';
 import { BALANCE } from '../config/balance';
 import { D, dmin } from '../core/num';
 import { floorStats, liftStats, shipStats, unlockedFloorCount } from './formulas';
@@ -31,6 +32,7 @@ export function step(s: GameState, dt: number, ctx: SimContext): void {
   if (!ctx.offline) goldenAdvance(s, dt, ctx);
   advanceResearch(s, dt, ctx);
   tickContract(s, dt, ctx);
+  if (!ctx.offline && Math.floor(s.simTime) !== Math.floor(s.simTime - dt)) tickLiveRecords(s);
 }
 
 /** Extra seconds a station runs this step from tap time it has earned (smooth, at most maxSpeed×). */

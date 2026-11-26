@@ -162,6 +162,7 @@ export function declineOffer(s: GameState, slot: number): boolean {
 export function cancelContract(s: GameState): boolean {
   if (s.contracts.active?.status !== 'active') return false;
   s.contracts.active = null;
+  s.stats.records.contractStreak = 0;
   return true;
 }
 
@@ -174,6 +175,7 @@ export function tickContract(s: GameState, dt: number, ctx: SimContext): void {
     a.remaining = 0;
     a.status = 'failed';
     s.contracts.failed += 1;
+    s.stats.records.contractStreak = 0;
     ctx.events?.push({ type: 'contractFailed', customer: a.customer });
   }
 }
@@ -220,6 +222,10 @@ export function closeContract(s: GameState): ContractPayout | null {
   s.stats.totalEarned = s.stats.totalEarned.add(a.pay);
   c.ruf += a.ruf;
   c.delivered += 1;
+  const r = s.stats.records;
+  r.contractStreak += 1;
+  if (r.contractStreak > r.bestContractStreak) r.bestContractStreak = r.contractStreak;
+  if (!r.customers.includes(a.customer)) r.customers.push(a.customer);
   if (a.bonus) grantReward(s, a.bonus);
   const unlocked = before && customerUnlocked(s, before) ? before : null;
   return { customer: CUSTOMER_BY_ID[a.customer], pay: a.pay, ruf: a.ruf, bonus: a.bonus, unlocked };
