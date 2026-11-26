@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.8.0 (Lieferverträge & Kronen-Schatzkammer)';
+export const APP_VERSION = '0.8.1 (Aufzug-Balancing, Kronen-Fix)';
 
 /** Shown in Settings so players and testers see what is finished and what is planned. */
 export const DEV_STATUS: { text: string; done: boolean }[] = [
@@ -19,6 +19,7 @@ export const DEV_STATUS: { text: string; done: boolean }[] = [
   { text: 'Advent-Event „Lebkuchen-Manufaktur“: 26 Türchen nach Gerätedatum, 3 Etagen, Wintermarkt, Winterdeko, Weihnachtsmanager', done: true },
   { text: 'Lieferverträge: 6 Kunden, Fristen, Ruf-Stufen, Tagesziel', done: true },
   { text: 'Kronen-Schatzkammer: 6 dauerhafte Startboni, Endspiel-Balancing (Kubikwurzel ab 100 Kronen)', done: true },
+  { text: '0.8.1: Oberhaus-Logistik ×8, späte Aufzug-/Versand-Meilensteine, Kronen zählen ab dem letzten Verkauf', done: true },
   { text: 'Weitere Saison-Events', done: false },
   { text: 'Cloud-Speicherstand und Konten', done: false },
 ];

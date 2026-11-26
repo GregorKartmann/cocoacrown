@@ -4,7 +4,7 @@
 
 Der Branch `gh-pages` enthält den fertigen Build (`npm run build` → `dist/`).
 
-Idle-Tycoon-Spiel als Webapp und installierbare PWA. Version 0.8.0 mit gemaltem Asset-Pack, Prestige („Marke verkaufen“ gegen Kronen) samt Kronen-Schatzkammer, Lieferverträgen, Rezeptlabor (Forschung), Erfolgen, Tageszielen und dem Advent-Event „Lebkuchen-Manufaktur“: die Manufaktur mit acht Produktionsetagen, Lastenaufzug, Lieferwagen, Managern, Aufträgen, Goldener Kakaobohne, Offline-Progression und lokalen Spielständen.
+Idle-Tycoon-Spiel als Webapp und installierbare PWA. Version 0.8.1 mit gemaltem Asset-Pack, Prestige („Marke verkaufen“ gegen Kronen) samt Kronen-Schatzkammer, Lieferverträgen, Rezeptlabor (Forschung), Erfolgen, Tageszielen und dem Advent-Event „Lebkuchen-Manufaktur“: die Manufaktur mit acht Produktionsetagen, Lastenaufzug, Lieferwagen, Managern, Aufträgen, Goldener Kakaobohne, Offline-Progression und lokalen Spielständen.
 
 ## Starten
 

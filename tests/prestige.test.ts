@@ -3,7 +3,7 @@ import { BALANCE } from '../src/config/balance';
 import { D } from '../src/core/num';
 import { checksum, decodeSave, encodeSave, toPlain } from '../src/save/serialize';
 import { sellBrand, unlockFloor } from '../src/sim/actions';
-import { crownFactor, crownsAvailable, crownsByEarnings, earningsForCrowns, nextCrownAt, prestigeUnlocked, shipStats } from '../src/sim/formulas';
+import { crownFactor, crownStepStart, crownsAvailable, crownsByEarnings, earningsForCrowns, nextCrownAt, prestigeUnlocked, shipStats } from '../src/sim/formulas';
 import { createGame } from '../src/sim/init';
 import type { GameState } from '../src/sim/types';
 import { runBot } from './bot';
@@ -30,15 +30,32 @@ describe('Prestige: Kronen-Formel', () => {
     expect(crownsByEarnings(D(4 * DIV))).toBe(2);
     expect(crownsByEarnings(D(100 * DIV))).toBe(10);
     // huge numbers stay finite
-    expect(crownsByEarnings(D('1e80'))).toBeGreaterThan(1e20);
+    expect(crownsByEarnings(D('1e80'))).toBeGreaterThan(1e15);
   });
 
-  it('ab 100 Kronen gilt die Kubikwurzel: doppelt so viele Kronen brauchen 8× Umsatz', () => {
+  it('Spielstände mit vielen Kronen aus der Zeit vor der steileren Kurve bekommen weiter Kronen', () => {
+    // 3000 crowns earned with the old square root: lifetime 3000² · divisor at the last sale
+    const s = lateGame(3000 * 3000 * DIV);
+    s.prestige.crowns = 3000;
+    s.prestige.runs = 12;
+    s.prestige.runStartEarned = D(3000 * 3000 * DIV);
+    s.prestige.spent = 2000; // the treasury does not matter for the sale
+    expect(crownsAvailable(s)).toBe(0);
+    s.stats.totalEarned = s.stats.totalEarned.mul(1.5);
+    const gain = crownsAvailable(s);
+    expect(gain).toBeGreaterThan(50);
+    expect(nextCrownAt(s).gt(s.stats.totalEarned)).toBe(true);
+    expect(crownStepStart(s).lte(s.stats.totalEarned)).toBe(true);
+    expect(sellBrand(s)).toBe(gain);
+    expect(s.prestige.crowns).toBe(3000 + gain);
+  });
+
+  it('ab 100 Kronen gilt die vierte Wurzel: doppelt so viele Kronen brauchen 16× Umsatz', () => {
     expect(crownsByEarnings(D(10000 * DIV))).toBe(100);
     expect(crownsByEarnings(D(10000 * DIV).mul(0.9999))).toBe(99);
-    expect(crownsByEarnings(D(80000 * DIV))).toBe(200);
-    expect(crownsByEarnings(D(80000 * DIV).mul(0.999))).toBe(199);
-    expect(earningsForCrowns(200).div(DIV).toNumber()).toBeCloseTo(80000, 6);
+    expect(crownsByEarnings(D(160000 * DIV))).toBe(200);
+    expect(crownsByEarnings(D(160000 * DIV).mul(0.999))).toBe(199);
+    expect(earningsForCrowns(200).div(DIV).toNumber()).toBeCloseTo(160000, 6);
     expect(earningsForCrowns(100).eq(10000 * DIV)).toBe(true);
     for (const k of [101, 150, 333, 1000]) expect(crownsByEarnings(earningsForCrowns(k).mul(1.0000001))).toBe(k);
   });
@@ -46,9 +63,12 @@ describe('Prestige: Kronen-Formel', () => {
   it('Bereits erhaltene Kronen werden abgezogen, die nächste Krone liegt bei (k+1)² · Teiler', () => {
     const s = lateGame(30 * DIV);
     expect(crownsAvailable(s)).toBe(5);
-    s.prestige.crowns = 5;
+    expect(sellBrand(s)).toBe(5);
+    expect(s.prestige.crowns).toBe(5);
     expect(crownsAvailable(s)).toBe(0);
     expect(nextCrownAt(s).eq(36 * DIV)).toBe(true);
+    s.stats.totalEarned = D(36 * DIV);
+    expect(crownsAvailable(s)).toBe(1);
   });
 
   it('Jede Krone erhöht den Verkaufspreis um 10 %', () => {

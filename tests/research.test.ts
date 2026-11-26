@@ -154,7 +154,7 @@ describe('Rezeptlabor: Wirkungen', () => {
 });
 
 describe('Etagen 6–8 (Oberhaus)', () => {
-  it('jede gebaute Oberhaus-Etage vergrößert Aufzug und Lieferwagen um ×3', () => {
+  it('jede gebaute Oberhaus-Etage vergrößert Aufzug und Lieferwagen um ×8', () => {
     const s = newGame();
     s.money = D(1e14);
     for (let i = 1; i < 5; i++) unlockFloor(s, i);
@@ -162,12 +162,12 @@ describe('Etagen 6–8 (Oberhaus)', () => {
     const ship = shipStats(s).capacity;
     expect(oberhausFactor(s)).toBe(1);
     unlockFloor(s, 5);
-    expect(oberhausFactor(s)).toBe(3);
-    expect(liftStats(s).capacity.div(lift).toNumber()).toBeCloseTo(3, 9);
-    expect(shipStats(s).capacity.div(ship).toNumber()).toBeCloseTo(3, 9);
+    expect(oberhausFactor(s)).toBe(8);
+    expect(liftStats(s).capacity.div(lift).toNumber()).toBeCloseTo(8, 9);
+    expect(shipStats(s).capacity.div(ship).toNumber()).toBeCloseTo(8, 9);
     unlockFloor(s, 6);
     unlockFloor(s, 7);
-    expect(oberhausFactor(s)).toBe(27);
+    expect(oberhausFactor(s)).toBe(512);
     expect(s.floors.every((f) => f.unlocked)).toBe(true);
   });
 

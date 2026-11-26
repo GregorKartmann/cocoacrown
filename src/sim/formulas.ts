@@ -302,21 +302,25 @@ export function prestigeUnlocked(s: GameState): boolean {
   return s.prestige.runs > 0 || s.prestige.bestFloor5 !== null;
 }
 
-/** Crowns a brand sale would give right now. */
+/**
+ * Crowns a brand sale would give right now: how far the earnings since the
+ * last sale moved along the crown curve. Measured from the last sale's
+ * lifetime earnings (not from the crowns owned), so a change of the curve –
+ * like the steeper tail in 0.8.0 – never strands crowns that were earned
+ * under the old one.
+ */
 export function crownsAvailable(s: GameState): number {
-  return Math.max(0, crownsByEarnings(s.stats.totalEarned) - s.prestige.crowns);
+  return Math.max(0, crownsByEarnings(s.stats.totalEarned) - crownsByEarnings(s.prestige.runStartEarned));
 }
 
 /** Lifetime earnings at which the next claimable crown appears. */
 export function nextCrownAt(s: GameState): Decimal {
-  const k = Math.max(crownsByEarnings(s.stats.totalEarned), s.prestige.crowns) + 1;
-  return earningsForCrowns(k);
+  return earningsForCrowns(crownsByEarnings(s.stats.totalEarned) + 1);
 }
 
-/** Lifetime earnings at which the current crown count started (for progress bars). */
+/** Lifetime earnings at which the current crown step started (for progress bars). */
 export function crownStepStart(s: GameState): Decimal {
-  const k = Math.max(crownsByEarnings(s.stats.totalEarned), s.prestige.crowns);
-  return earningsForCrowns(k);
+  return earningsForCrowns(crownsByEarnings(s.stats.totalEarned));
 }
 
 /* ------------------------------------------------------------------------- */

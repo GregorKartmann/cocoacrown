@@ -154,7 +154,7 @@ export function PrestigeSheet({ onClose, initial }: { onClose: () => void; initi
 
       <p className="flavor">
         Kronen wachsen mit der Wurzel deines Gesamtumsatzes: Wer länger wartet, bekommt mehr – aber jede weitere Krone dauert länger. Ab 100 Kronen gilt die
-        Kubikwurzel. Gib Kronen in der Schatzkammer für Startboni aus; ihr Einkommensbonus bleibt dabei erhalten.
+        vierte Wurzel. Gib Kronen in der Schatzkammer für Startboni aus; ihr Einkommensbonus bleibt dabei erhalten.
       </p>
 
       <button

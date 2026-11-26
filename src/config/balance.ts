@@ -36,6 +36,8 @@ export interface FloorDef {
   /**
    * Floors 6–8 come with a bigger lift cabin and bigger vans: lift and van
    * capacity are multiplied by this once the floor stands (the "Oberhaus").
+   * 0.8.1: ×8 instead of ×3 – each of these floors is worth ×20 per unit,
+   * and with ×3 the lift could never catch up with all eight floors.
    */
   logistics?: number;
   costGrowth: number;
@@ -78,9 +80,9 @@ export const BALANCE = {
     { id: 'bars', product: 'Schokoladentafel', productPlural: 'Schokoladentafeln', machine: 'Gießanlage', unitValue: 500, baseUnits: 3, baseCycle: 5, unlockCost: 250000, baseCost: 100000, costGrowth: 1.15 },
     { id: 'pralines', product: 'Pralinenschachtel', productPlural: 'Pralinenschachteln', machine: 'Überziehmaschine', unitValue: 10000, baseUnits: 3, baseCycle: 6, unlockCost: 5000000, baseCost: 2000000, costGrowth: 1.15 },
     { id: 'truffles', product: 'Trüffelbox', productPlural: 'Trüffelboxen', machine: 'Trüffel-Atelier', unitValue: 200000, baseUnits: 3, baseCycle: 8, unlockCost: 100000000, baseCost: 40000000, costGrowth: 1.15 },
-    { id: 'nougat', product: 'Haselnuss-Nougat', productPlural: 'Haselnuss-Nougats', machine: 'Nougat-Mélangeur', unitValue: 4e6, baseUnits: 3, baseCycle: 9, unlockCost: 1e9, baseCost: 3e8, costGrowth: 1.15, logistics: 3 },
-    { id: 'ruby', product: 'Ruby-Tafel', productPlural: 'Ruby-Tafeln', machine: 'Ruby-Temperieranlage', unitValue: 8e7, baseUnits: 3, baseCycle: 10, unlockCost: 3e10, baseCost: 8e9, costGrowth: 1.15, logistics: 3 },
-    { id: 'signature', product: 'Signature-Box', productPlural: 'Signature-Boxen', machine: 'Geschenkbox-Presse', unitValue: 1.6e9, baseUnits: 3, baseCycle: 12, unlockCost: 1e12, baseCost: 3e11, costGrowth: 1.15, logistics: 3 },
+    { id: 'nougat', product: 'Haselnuss-Nougat', productPlural: 'Haselnuss-Nougats', machine: 'Nougat-Mélangeur', unitValue: 4e6, baseUnits: 3, baseCycle: 9, unlockCost: 1e9, baseCost: 3e8, costGrowth: 1.15, logistics: 8 },
+    { id: 'ruby', product: 'Ruby-Tafel', productPlural: 'Ruby-Tafeln', machine: 'Ruby-Temperieranlage', unitValue: 8e7, baseUnits: 3, baseCycle: 10, unlockCost: 3e10, baseCost: 8e9, costGrowth: 1.15, logistics: 8 },
+    { id: 'signature', product: 'Signature-Box', productPlural: 'Signature-Boxen', machine: 'Geschenkbox-Presse', unitValue: 1.6e9, baseUnits: 3, baseCycle: 12, unlockCost: 1e12, baseCost: 3e11, costGrowth: 1.15, logistics: 8 },
   ],
 
   floorMilestones: [
@@ -127,10 +129,15 @@ export const BALANCE = {
       { level: 150, capacity: 3 },
       { level: 175, capacity: 3 },
       { level: 200, capacity: 3 },
-      { level: 250, capacity: 4 },
-      { level: 300, capacity: 4 },
-      { level: 400, capacity: 5 },
-      { level: 500, capacity: 5 },
+      // 0.8.1: late levels pay off again (before: ×4 at 250/300, ×5 at 400/500)
+      { level: 225, capacity: 3 },
+      { level: 250, capacity: 3 },
+      { level: 275, capacity: 3 },
+      { level: 300, capacity: 3 },
+      { level: 350, capacity: 3 },
+      { level: 400, capacity: 3 },
+      { level: 450, capacity: 3 },
+      { level: 500, capacity: 3 },
     ],
     /** Versandlager holds this many full lift loads. */
     depotLoads: 25,
@@ -161,10 +168,15 @@ export const BALANCE = {
       { level: 150, capacity: 3 },
       { level: 175, capacity: 3 },
       { level: 200, capacity: 3 },
-      { level: 250, capacity: 4 },
-      { level: 300, capacity: 4 },
-      { level: 400, capacity: 5 },
-      { level: 500, capacity: 5 },
+      // 0.8.1: late levels pay off again (before: ×4 at 250/300, ×5 at 400/500)
+      { level: 225, capacity: 3 },
+      { level: 250, capacity: 3 },
+      { level: 275, capacity: 3 },
+      { level: 300, capacity: 3 },
+      { level: 350, capacity: 3 },
+      { level: 400, capacity: 3 },
+      { level: 450, capacity: 3 },
+      { level: 500, capacity: 3 },
     ],
   },
 
@@ -190,12 +202,15 @@ export const BALANCE = {
      */
     divisor: 1e7,
     /**
-     * From this many crowns on the root gets steeper (cube root instead of
-     * square root): doubling the crowns then needs 8× the earnings instead of
-     * 4×, which keeps late runs from collapsing to a few minutes.
+     * From this many crowns on the root gets steeper (4th root instead of
+     * square root): doubling the crowns then needs 16× the earnings instead
+     * of 4×, which keeps late runs from collapsing to a few minutes.
+     * 0.8.0 used the cube root; 0.8.1 pairs the 4th root with the stronger
+     * logistics. Sales count from the last sale's earnings, so changing this
+     * never strands crowns already owned.
      */
     tailFrom: 100,
-    tailRoot: 3,
+    tailRoot: 4,
     /** Income bonus per crown (+10 %, additive). */
     perCrown: 0.1,
     /**
