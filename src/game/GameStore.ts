@@ -13,6 +13,10 @@ import { step } from '../sim/sim';
 import type { BuyMode, GameState, ManagerCategory, Settings, SimEvent, StationId } from '../sim/types';
 import { SaveManager, exportSaveText, importSaveText } from '../save/storage';
 import * as W from '../sim/winter';
+import * as C from '../sim/contracts';
+import * as T from '../sim/treasury';
+import type { CustomerId } from '../config/contracts';
+import type { TreasuryId } from '../config/treasury';
 import type { ShopItem } from '../config/winter';
 import { eventNow } from './clock';
 
@@ -42,6 +46,12 @@ export type UiEvent =
   | { type: 'winterBought'; id: ShopItem['id'] }
   | { type: 'winterStars'; amount: number; reason: 'daily' | 'offline' }
   | { type: 'adventDay'; day: number }
+  | { type: 'contractsOpen' }
+  | { type: 'contractAccepted'; customer: CustomerId }
+  | { type: 'contractDelivered'; customer: CustomerId }
+  | { type: 'contractFailed'; customer: CustomerId }
+  | { type: 'contractClosed'; payout: C.ContractPayout | null }
+  | { type: 'treasuryBought'; id: TreasuryId; rank: number }
   | { type: 'fail'; station?: StationId };
 
 /** Rolling window of real sales for the "€/s" display. */
@@ -119,6 +129,8 @@ export class GameStore {
     G.refreshDaily(state, Date.now());
     this.advent = W.adventPhase(eventNow());
     W.syncSeason(state, this.advent);
+    C.checkContractsOpen(state);
+    C.refreshBoard(state);
   }
 
   /* ---------------- lifecycle ---------------- */
@@ -126,8 +138,10 @@ export class GameStore {
   /** Called once after loading: credit the time since the last save. */
   resume(now = Date.now()): void {
     const from = this.state.lastWallTime;
+    const contract = this.state.contracts.active?.status;
     const report = catchUp(this.state, now);
     this.creditWinter(from, now);
+    this.announceContract(contract);
     if (report && report.awaySeconds >= BALANCE.offline.reportThresholdSeconds && report.earned.gt(0)) this.offlineReport = report;
     this.lastPerf = performance.now();
     this.acc = 0;
@@ -179,7 +193,9 @@ export class GameStore {
   /** Visibility returned or long freeze: credit the elapsed time like offline time. */
   handleAbsence(): void {
     const from = this.state.lastWallTime;
+    const contract = this.state.contracts.active?.status;
     const report = catchUp(this.state, Date.now());
+    this.announceContract(contract);
     this.refreshAdvent();
     this.creditWinter(from, Date.now());
     if (G.refreshDaily(this.state, Date.now())) this.emit({ type: 'newDay' });
@@ -300,6 +316,9 @@ export class GameStore {
       else if (e.type === 'researchDone') {
         this.emit({ type: 'researchDone', id: e.id, rank: e.rank });
         this.persist(false);
+      } else if (e.type === 'contractDelivered' || e.type === 'contractFailed') {
+        this.emit({ type: e.type, customer: e.customer });
+        this.persist(false);
       }
     }
     return ev;
@@ -398,6 +417,7 @@ export class GameStore {
   private checkGoals(nowPerf: number): void {
     this.lastGoalCheck = nowPerf;
     this.refreshAdvent();
+    this.refreshContracts();
     if (G.refreshDaily(this.state, Date.now())) {
       this.emit({ type: 'newDay' });
       this.persist(false);
@@ -492,6 +512,75 @@ export class GameStore {
 
   flow() {
     return analyzeFlow(this.state);
+  }
+
+  /* ---------------- Lieferverträge ---------------- */
+
+  /** A contract finished during an absence (the offline simulation sends no events). */
+  private announceContract(before: string | undefined): void {
+    const a = this.state.contracts.active;
+    if (before !== 'active' || !a || a.status === 'active') return;
+    this.emit({ type: a.status === 'delivered' ? 'contractDelivered' : 'contractFailed', customer: a.customer });
+  }
+
+  /** Opens the board when the 2nd floor stands and keeps its offers filled. */
+  refreshContracts(): void {
+    if (C.checkContractsOpen(this.state)) {
+      this.emit({ type: 'contractsOpen' });
+      this.persist(false);
+    }
+    if (C.refreshBoard(this.state)) this.notify(true);
+  }
+
+  acceptContract(slot: number): boolean {
+    const a = C.acceptContract(this.state, slot);
+    if (a) {
+      this.emit({ type: 'contractAccepted', customer: a.customer });
+      this.persist(false);
+    } else this.emit({ type: 'fail' });
+    this.notify(true);
+    return !!a;
+  }
+
+  declineOffer(slot: number): boolean {
+    const ok = C.declineOffer(this.state, slot);
+    if (ok) this.persist(false);
+    this.notify(true);
+    return ok;
+  }
+
+  cancelContract(): boolean {
+    const ok = C.cancelContract(this.state);
+    if (ok) this.persist(false);
+    this.notify(true);
+    return ok;
+  }
+
+  /** Collects a delivered contract (or clears a failed one). */
+  closeContract(): C.ContractPayout | null {
+    const had = this.state.contracts.active;
+    if (!had || had.status === 'active') {
+      this.emit({ type: 'fail' });
+      return null;
+    }
+    const p = C.closeContract(this.state);
+    if (p) this.bumpDaily('contractsDelivered', 1);
+    this.emit({ type: 'contractClosed', payout: p });
+    this.persist(true);
+    this.notify(true);
+    return p;
+  }
+
+  /* ---------------- Kronen-Schatzkammer ---------------- */
+
+  buyTreasury(id: TreasuryId): boolean {
+    const ok = T.buyTreasury(this.state, id);
+    if (ok) {
+      this.emit({ type: 'treasuryBought', id, rank: T.treasuryRank(this.state, id) });
+      this.persist(true);
+    } else this.emit({ type: 'fail' });
+    this.notify(true);
+    return ok;
   }
 
   /* ---------------- Advent-Event ---------------- */

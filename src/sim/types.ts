@@ -1,6 +1,9 @@
 import type { Decimal } from '../core/num';
 import type { ResearchId } from '../config/research';
 import type { Notation } from '../core/format';
+import type { CustomerId } from '../config/contracts';
+import type { GoalReward } from '../config/goals';
+import type { TreasuryId } from '../config/treasury';
 
 export type FloorStationId = 'f0' | 'f1' | 'f2' | 'f3' | 'f4' | 'f5' | 'f6' | 'f7';
 export type StationId = FloorStationId | 'lift' | 'ship';
@@ -127,6 +130,45 @@ export interface PrestigeState {
   runStartPlay: number;
   /** Fastest time (s) from a run start to the 5th floor, if reached. */
   bestFloor5: number | null;
+  /** Crowns spent in the Kronen-Schatzkammer (their income bonus stays). */
+  spent: number;
+  /** Treasury ranks bought. */
+  treasury: Partial<Record<TreasuryId, number>>;
+}
+
+/** A customer's offer on the contract board (see sim/contracts.ts). */
+export interface ContractOffer {
+  id: number;
+  customer: CustomerId;
+  /** 'units': units of floor `floor`; 'value': goods value sold (€), floor −1. */
+  kind: 'units' | 'value';
+  floor: number;
+  target: Decimal;
+  /** Deadline in game seconds. */
+  seconds: number;
+  pay: Decimal;
+  ruf: number;
+  bonus: GoalReward | null;
+}
+
+export interface ActiveContract extends ContractOffer {
+  progress: Decimal;
+  /** Game seconds left (runs on while the game is closed). */
+  remaining: number;
+  status: 'active' | 'delivered' | 'failed';
+}
+
+export interface ContractsState {
+  open: boolean;
+  ruf: number;
+  /** Fixed slots; null = a new offer is on its way. */
+  offers: (ContractOffer | null)[];
+  /** Per slot: simTime of the next new offer (empty slot) or of the rewrite (old offer). */
+  slotAt: number[];
+  active: ActiveContract | null;
+  nextId: number;
+  delivered: number;
+  failed: number;
 }
 
 export interface ResearchState {
@@ -226,6 +268,7 @@ export interface GameState {
   rewards: { freeHires: number; goldenBeans: number };
   daily: DailyState;
   winter: WinterState;
+  contracts: ContractsState;
   rng: number;
   settings: Settings;
 }
@@ -234,6 +277,8 @@ export type SimEvent =
   | { type: 'batch'; floor: number; value: Decimal }
   | { type: 'brandSold'; crowns: number }
   | { type: 'researchDone'; id: ResearchId; rank: number }
+  | { type: 'contractDelivered'; customer: CustomerId }
+  | { type: 'contractFailed'; customer: CustomerId }
   | { type: 'liftLoad'; floor: number; value: Decimal }
   | { type: 'liftUnload'; value: Decimal }
   | { type: 'vanDepart'; van: number; value: Decimal }

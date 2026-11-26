@@ -1,3 +1,4 @@
+import { noteProduced, noteSold, tickContract } from './contracts';
 import { BALANCE } from '../config/balance';
 import { D, dmin } from '../core/num';
 import { floorStats, liftStats, shipStats, unlockedFloorCount } from './formulas';
@@ -29,6 +30,7 @@ export function step(s: GameState, dt: number, ctx: SimContext): void {
   if (!s.ship.vans.some((v) => v.phase !== 'dock')) s.ship.rush = 0;
   if (!ctx.offline) goldenAdvance(s, dt, ctx);
   advanceResearch(s, dt, ctx);
+  tickContract(s, dt, ctx);
 }
 
 /** Extra seconds a station runs this step from tap time it has earned (smooth, at most maxSpeed×). */
@@ -87,6 +89,7 @@ export function floorAdvance(s: GameState, i: number, dt: number, ctx: SimContex
       f.stalled = false;
       s.stats.batches += 1;
       ctx.events?.push({ type: 'batch', floor: i, value: st.batch });
+      noteProduced(s, i, st.unitsPerCycle, ctx);
       if (ctx.report) ctx.report.produced = ctx.report.produced.add(st.batch);
       if (!auto) {
         f.running = false;
@@ -281,6 +284,7 @@ export function shipAdvance(s: GameState, dt: number, ctx: SimContext): void {
         s.stats.vanTrips += 1;
         if (ctx.report) ctx.report.earned = ctx.report.earned.add(money);
         ctx.events?.push({ type: 'sale', van: v, value: money });
+        noteSold(s, money, ctx);
         van.cargo = D(0);
         van.phase = 'back';
         van.timer = half;

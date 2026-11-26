@@ -19,6 +19,9 @@ import { BrandSoldDialog, PrestigeSheet } from './components/PrestigeSheet';
 import { ResearchSheet } from './components/ResearchSheet';
 import { LAB_FLOOR, RESEARCH_BY_ID } from '../config/research';
 import { WinterButton, WinterSheet } from './components/WinterSheet';
+import { ContractStrip, ContractsSheet } from './components/ContractsSheet';
+import { CONTRACTS, CUSTOMER_BY_ID } from '../config/contracts';
+import { TREASURY_BY_ID } from '../config/treasury';
 import { DOORS, SHOP, WINTER_FLOORS } from '../config/winter';
 import { formatNumber } from '../core/format';
 import { setEventDate } from '../game/clock';
@@ -30,9 +33,10 @@ type SheetState =
   | { kind: 'overview' }
   | { kind: 'quests' }
   | { kind: 'stats' }
-  | { kind: 'prestige' }
+  | { kind: 'prestige'; tab?: 'sale' | 'treasury' }
   | { kind: 'research' }
   | { kind: 'winter' }
+  | { kind: 'contracts' }
   | { kind: 'settings' };
 
 interface BeforeInstallPromptEvent extends Event {
@@ -195,6 +199,39 @@ export function App({ store, updateAvailable, onUpdate }: { store: GameStore; up
           audio.play('skill');
           break;
         }
+        case 'contractsOpen':
+          audio.play('unlock');
+          toast('Neu: Lieferverträge! Kunden bestellen jetzt Ware mit Frist.', 'gold');
+          break;
+        case 'contractAccepted':
+          audio.play('upgrade');
+          haptic(hap, 15);
+          toast(`Vertrag angenommen: ${CUSTOMER_BY_ID[e.customer].name}`, 'good');
+          break;
+        case 'contractDelivered':
+          audio.play('milestone');
+          haptic(hap, 40);
+          toast(`Pünktlich geliefert an ${CUSTOMER_BY_ID[e.customer].name}! Bezahlung abholen.`, 'gold');
+          break;
+        case 'contractFailed':
+          audio.play('fail');
+          toast(`Frist abgelaufen: ${CUSTOMER_BY_ID[e.customer].name}`, 'warn');
+          break;
+        case 'contractClosed':
+          if (e.payout) {
+            audio.play('claim');
+            haptic(hap, 30);
+            const p = e.payout;
+            toast(`+${formatMoney(p.pay, n)} und +${p.ruf} Ruf${p.bonus ? ` · ${rewardText(p.bonus)}` : ''}`, 'gold');
+            if (p.unlocked) toast(`Neuer Kunde: ${p.unlocked.name}`, 'gold');
+            setBump((b) => b + 1);
+          }
+          break;
+        case 'treasuryBought':
+          audio.play('milestone');
+          haptic(hap, 30);
+          toast(`Schatzkammer: ${TREASURY_BY_ID[e.id].name} Rang ${e.rank}`, 'gold');
+          break;
         case 'researchDone':
           audio.play('milestone');
           haptic(hap, 30);
@@ -360,11 +397,16 @@ export function App({ store, updateAvailable, onUpdate }: { store: GameStore; up
         <TopBar onSettings={() => setSheet({ kind: 'settings' })} onStation={openStation} onPrestige={() => setSheet({ kind: 'prestige' })} bump={bump} refEl={topRef} />
         {winterPos && <WinterButton onOpen={() => setSheet({ kind: 'winter' })} style={{ top: winterPos.top, right: winterPos.right }} />}
         <div className="bottom-ui" ref={bottomRef}>
+          <ContractStrip onOpen={() => setSheet({ kind: 'contracts' })} />
           <QuestCard onFocus={(id) => worldRef.current?.focus(id)} onClaim={() => store.claimQuest()} onOpenGoals={() => setSheet({ kind: 'quests' })} />
           <BottomNav
             onOpen={(w) => {
               if (w === 'research' && !store.state.research.open) {
                 toast(`Das Rezeptlabor öffnet mit der ${LAB_FLOOR + 1}. Etage.`, 'info');
+                return;
+              }
+              if (w === 'contracts' && !store.state.contracts.open) {
+                toast(`Lieferverträge gibt es ab der ${CONTRACTS.openFloor + 1}. Etage.`, 'info');
                 return;
               }
               setSheet({ kind: w } as SheetState);
@@ -390,7 +432,8 @@ export function App({ store, updateAvailable, onUpdate }: { store: GameStore; up
         {sheet?.kind === 'overview' && <OverviewSheet onClose={close} onStation={openStation} />}
         {sheet?.kind === 'quests' && <GoalsSheet onClose={close} initial={store.state.quest.index < QUESTS.length ? 'quests' : 'daily'} />}
         {sheet?.kind === 'stats' && <StatsSheet onClose={close} onPrestige={() => setSheet({ kind: 'prestige' })} />}
-        {sheet?.kind === 'prestige' && <PrestigeSheet onClose={close} />}
+        {sheet?.kind === 'prestige' && <PrestigeSheet onClose={close} initial={sheet.tab} />}
+        {sheet?.kind === 'contracts' && <ContractsSheet onClose={close} />}
         {sheet?.kind === 'research' && <ResearchSheet onClose={close} />}
         {sheet?.kind === 'winter' && <WinterSheet onClose={close} />}
         {sheet?.kind === 'settings' && (
@@ -410,6 +453,10 @@ export function App({ store, updateAvailable, onUpdate }: { store: GameStore; up
             onClose={() => {
               setSold(null);
               worldRef.current?.focus('f0');
+            }}
+            onTreasury={() => {
+              setSold(null);
+              setSheet({ kind: 'prestige', tab: 'treasury' });
             }}
           />
         )}

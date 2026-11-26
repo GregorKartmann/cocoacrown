@@ -1,3 +1,5 @@
+import { TREASURY } from '../../config/treasury';
+import { crownsFree, treasuryCost } from '../../sim/treasury';
 import { useEffect, useState, type ReactNode } from 'react';
 import { formatDuration, formatMoney, formatNumber, formatRate } from '../../core/format';
 import { currentQuest } from '../../sim/actions';
@@ -76,6 +78,10 @@ export function TopBar({
   }, [bump]);
   const showBottleneck = s.stats.vanTrips > 0;
   const claimable = prestigeUnlocked(s) ? crownsAvailable(s) : 0;
+  const treasuryReady = TREASURY.some((b) => {
+    const c = treasuryCost(s, b.id);
+    return c !== null && c <= crownsFree(s);
+  });
   const topFloor = s.floors.reduce((m, f, i) => (f.unlocked ? i : m), 0);
   const prodStation = (`f${topFloor}`) as StationId;
   const chips: { id: StationId; key: 'production' | 'lift' | 'ship'; label: string; icon: ReactNode; v: string }[] = [
@@ -98,8 +104,8 @@ export function TopBar({
             <span className="money-rate">+{formatRate(measured, n)}</span>
           </div>
         </div>
-        {prestigeUnlocked(s) && (
-          <button className={`btn icon-btn crown-btn ${claimable > 0 ? 'ready' : ''}`} onClick={onPrestige} aria-label="Marke verkaufen" data-testid="crown-btn">
+        {(prestigeUnlocked(s) || s.prestige.crowns > 0) && (
+          <button className={`btn icon-btn crown-btn ${claimable > 0 || treasuryReady ? 'ready' : ''}`} onClick={onPrestige} aria-label="Marke verkaufen und Schatzkammer" data-testid="crown-btn">
             <IconCrown size={30} />
             {claimable > 0 && <span className="crown-badge">+{formatNumber(claimable, n, 0)}</span>}
           </button>
@@ -226,7 +232,7 @@ function DailyCard({ onOpenGoals }: { onOpenGoals: () => void }) {
   );
 }
 
-export function BottomNav({ onOpen, refEl }: { onOpen: (what: 'overview' | 'managers' | 'quests' | 'research' | 'stats') => void; refEl: React.Ref<HTMLDivElement> }) {
+export function BottomNav({ onOpen, refEl }: { onOpen: (what: 'overview' | 'managers' | 'quests' | 'contracts' | 'research' | 'stats') => void; refEl: React.Ref<HTMLDivElement> }) {
   useGameVersion();
   const store = useStore();
   const s = store.state;
@@ -234,6 +240,8 @@ export function BottomNav({ onOpen, refEl }: { onOpen: (what: 'overview' | 'mana
   const unmanaged = s.floors.some((f) => f.unlocked && !f.managerId) || !s.lift.managerId || !s.ship.managerId;
   const q = currentQuest(s);
   const labIdle = s.research.open && !s.research.active && RESEARCH.some((n) => whyNot(s, n.id) === null);
+  const ca = s.contracts.active;
+  const contractAttention = s.contracts.open && (ca ? ca.status !== 'active' : s.contracts.offers.some(Boolean));
   return (
     <nav className="nav panel" ref={refEl}>
       <button onClick={() => onOpen('overview')} data-testid="nav-overview">
@@ -249,6 +257,11 @@ export function BottomNav({ onOpen, refEl }: { onOpen: (what: 'overview' | 'mana
         <IconQuest size={30} />
         Ziele
         {(q?.done || goalsAttention(s) > 0) && <span className="dot" />}
+      </button>
+      <button onClick={() => onOpen('contracts')} data-testid="nav-contracts" className={s.contracts.open ? '' : 'locked'}>
+        <img src={artUrl('vertraege/siegel/angebot')} alt="" />
+        Verträge
+        {contractAttention && <span className="dot" />}
       </button>
       <button onClick={() => onOpen('research')} data-testid="nav-research" className={s.research.open ? '' : 'locked'}>
         <IconLab size={30} />

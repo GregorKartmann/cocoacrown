@@ -1,3 +1,4 @@
+import { treasuryOfflineSeconds } from './treasury';
 import { BALANCE } from '../config/balance';
 import { D, Decimal } from '../core/num';
 import { analyzeFlow, type Stage } from './formulas';
@@ -34,7 +35,7 @@ export function simulateOffline(s: GameState, awaySeconds: number): OfflineRepor
   const cfg = BALANCE.offline;
   const away = Math.max(0, awaySeconds);
   // Lagerkapazität research extends the credited time (3 h → up to 12 h).
-  const simulated = Math.min(away, Math.max(cfg.maxSeconds, R.offlineSeconds(s)));
+  const simulated = Math.min(away, offlineCap(s));
   const acc: OfflineAccumulator = {
     earned: D(0),
     produced: D(0),
@@ -82,4 +83,9 @@ export function catchUp(s: GameState, now: number): OfflineReport | null {
   s.lastWallTime = now;
   if (!(elapsed > 0)) return null;
   return simulateOffline(s, elapsed);
+}
+
+/** Longest absence credited: research (Lagerkapazität) plus the treasury's extra hours. */
+export function offlineCap(s: GameState): number {
+  return Math.max(BALANCE.offline.maxSeconds, R.offlineSeconds(s)) + treasuryOfflineSeconds(s);
 }

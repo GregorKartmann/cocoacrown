@@ -266,10 +266,26 @@ export function crownFactorFor(crowns: number, s?: GameState): number {
   return 1 + (s ? perCrown(s) : BALANCE.prestige.perCrown) * crowns;
 }
 
-/** Crowns earned in total so far by lifetime earnings (owned + claimable). */
+/**
+ * Crowns earned in total so far by lifetime earnings (owned + claimable):
+ * ⌊√(L / divisor)⌋ up to `tailFrom` crowns, then ⌊tailFrom · (L / L_tail)^(1/tailRoot)⌋
+ * (continuous at L_tail = tailFrom² · divisor), so late crowns need more earnings.
+ */
 export function crownsByEarnings(lifetime: Decimal): number {
   if (lifetime.lte(0)) return 0;
-  return Math.floor(lifetime.div(BALANCE.prestige.divisor).sqrt().toNumber() + 1e-9);
+  const { divisor, tailFrom, tailRoot } = BALANCE.prestige;
+  const x = lifetime.div(divisor);
+  if (x.lte(tailFrom * tailFrom)) return Math.floor(x.sqrt().toNumber() + 1e-9);
+  return Math.floor(tailFrom * x.div(tailFrom * tailFrom).pow(1 / tailRoot).toNumber() + 1e-9);
+}
+
+/** Lifetime earnings at which crown number k is reached (inverse of crownsByEarnings). */
+export function earningsForCrowns(k: number): Decimal {
+  const { divisor, tailFrom, tailRoot } = BALANCE.prestige;
+  if (k <= tailFrom) return D(divisor).mul(k).mul(k);
+  return D(divisor)
+    .mul(tailFrom * tailFrom)
+    .mul(D(k / tailFrom).pow(tailRoot));
 }
 
 /** Number of milestone levels in (before, after] for a station – each is worth a Rezeptpunkt. */
@@ -294,13 +310,13 @@ export function crownsAvailable(s: GameState): number {
 /** Lifetime earnings at which the next claimable crown appears. */
 export function nextCrownAt(s: GameState): Decimal {
   const k = Math.max(crownsByEarnings(s.stats.totalEarned), s.prestige.crowns) + 1;
-  return D(BALANCE.prestige.divisor).mul(k).mul(k);
+  return earningsForCrowns(k);
 }
 
 /** Lifetime earnings at which the current crown count started (for progress bars). */
 export function crownStepStart(s: GameState): Decimal {
   const k = Math.max(crownsByEarnings(s.stats.totalEarned), s.prestige.crowns);
-  return D(BALANCE.prestige.divisor).mul(k).mul(k);
+  return earningsForCrowns(k);
 }
 
 /* ------------------------------------------------------------------------- */

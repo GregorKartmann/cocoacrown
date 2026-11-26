@@ -184,7 +184,7 @@ describe('Tagesziele', () => {
   });
 
   it('jedes Ziel im Pool hat ein gültiges Ziel und einen Bereich', () => {
-    expect(DAILY_POOL.length).toBe(12);
+    expect(DAILY_POOL.length).toBe(13);
     for (const t of DAILY_POOL) expect(['Produktion', 'Logistik', 'Extra']).toContain(t.slot);
   });
 });

@@ -3,6 +3,7 @@ import { D } from '../core/num';
 import { defaultDaily } from './goals';
 import { defaultResearch } from './research';
 import { freshWinter } from './winter';
+import { defaultContracts } from './contracts';
 import { randomSeed } from './rng';
 import type { FloorState, GameState, LiftState, PrestigeState, Settings, ShipState } from './types';
 
@@ -11,8 +12,9 @@ import type { FloorState, GameState, LiftState, PrestigeState, Settings, ShipSta
  * v3: floors 6–8, Rezeptlabor (research).
  * v4: Erfolge, Tagesziele mit Serie, Belohnungen (kostenlose Einstellung, Goldene Bohne).
  * v5: Advent-Event „Lebkuchen-Manufaktur“ (winter state), Winterdeko-Einstellung.
+ * v6: Lieferverträge (contracts), Kronen-Schatzkammer (prestige.spent/treasury).
  */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 export function defaultSettings(): Settings {
   return { notation: 'short', sound: true, music: true, haptics: true, buyMode: 1, winterDecor: true };
@@ -61,7 +63,7 @@ export function freshShip(): ShipState {
 }
 
 export function defaultPrestige(): PrestigeState {
-  return { crowns: 0, runs: 0, runStartEarned: D(0), runStartPlay: 0, bestFloor5: null };
+  return { crowns: 0, runs: 0, runStartEarned: D(0), runStartPlay: 0, bestFloor5: null, spent: 0, treasury: {} };
 }
 
 export function createGame(now = Date.now(), seed = randomSeed(), settings: Settings = defaultSettings()): GameState {
@@ -100,6 +102,7 @@ export function createGame(now = Date.now(), seed = randomSeed(), settings: Sett
     rewards: { freeHires: 0, goldenBeans: 0 },
     daily: defaultDaily(),
     winter: freshWinter(),
+    contracts: defaultContracts(),
     rng: seed >>> 0,
     settings: { ...settings },
   };

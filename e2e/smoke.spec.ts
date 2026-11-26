@@ -218,3 +218,57 @@ test('Advent: Vorschau im November, Türchen nach Gerätedatum, Stand übersteht
   expect(w.season).toBe(2026);
   expect(errors).toEqual([]);
 });
+
+test('Lieferverträge und Schatzkammer: annehmen, liefern, abholen, Bonus kaufen', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/?debug=1');
+  await expect(page.getByTestId('money')).toBeVisible();
+  type W = { __cc: { give: (n: number) => void; store: any } };
+  await page.evaluate(() => {
+    const w = window as unknown as W;
+    w.__cc.give(1e6);
+    w.__cc.store.unlock(1);
+    w.__cc.store.refreshContracts();
+    w.__cc.store.notify(true);
+  });
+  await page.getByTestId('nav-contracts').click();
+  await expect(page.getByTestId('offer-0')).toBeVisible();
+  await page.getByTestId('accept-0').click();
+  await expect(page.getByTestId('contract-active')).toContainText('Vertrag aktiv');
+  await page.evaluate(() => {
+    const st = (window as unknown as W).__cc.store;
+    const a = st.state.contracts.active;
+    a.progress = a.target;
+    a.status = 'delivered';
+    st.notify(true);
+  });
+  const before = await page.evaluate(() => (window as unknown as W).__cc.store.state.money.toNumber());
+  await page.getByTestId('contract-claim').click();
+  const after = await page.evaluate(() => {
+    const s = (window as unknown as W).__cc.store.state;
+    return { money: s.money.toNumber(), ruf: s.contracts.ruf, delivered: s.contracts.delivered };
+  });
+  expect(after.ruf).toBeGreaterThanOrEqual(1);
+  expect(after.delivered).toBe(1);
+  expect(after.money).toBeGreaterThan(before);
+
+  // Schatzkammer
+  await page.evaluate(() => {
+    const st = (window as unknown as W).__cc.store;
+    st.state.prestige.crowns = 30;
+    st.notify(true);
+  });
+  await page.keyboard.press('Escape');
+  await page.getByTestId('crown-btn').click();
+  await page.getByTestId('ptab-treasury').click();
+  await expect(page.getByTestId('crowns-free')).toHaveText('30');
+  await page.getByTestId('buy-startkapital').click();
+  await expect(page.getByTestId('crowns-free')).toHaveText('26');
+  await page.reload();
+  await expect(page.getByTestId('money')).toBeVisible();
+  const t = await page.evaluate(() => (window as unknown as W).__cc.store.state.prestige);
+  expect(t.treasury.startkapital).toBe(1);
+  expect(t.spent).toBe(4);
+  expect(errors).toEqual([]);
+});

@@ -54,6 +54,7 @@ export const GOAL_ICON: Record<string, string> = {
   crate: 'logistik/versandkisten',
   research: 'forschung/forschungsmarke',
   done: 'oberflaeche/bestaetigen',
+  contract: 'vertraege/siegel/puenktlich',
 };
 
 export const CATEGORIES: AchievementCategory[] = [
@@ -148,14 +149,16 @@ export type DailyMetric =
   | 'acceptedActionTaps'
   | 'activeSeconds'
   | 'activeManagerSkills'
-  | 'distinctManualStations';
+  | 'distinctManualStations'
+  | 'contractsDelivered';
 
 export type DailyRequirement =
   | 'manual_production_possible'
   | 'affordable_production_upgrade_possible'
   | 'two_floors_unlocked'
   | 'affordable_logistics_upgrade_possible'
-  | 'assigned_manager_present';
+  | 'assigned_manager_present'
+  | 'contracts_open';
 
 export interface DailyTemplate {
   id: string;
@@ -184,6 +187,7 @@ export const DAILY_POOL: DailyTemplate[] = [
   { id: 'flex_taps', slot: 'Extra', title: '{n} Aktionen per Tippen auslösen', metric: 'acceptedActionTaps', target: 25, icon: 'checklist', requires: [] },
   { id: 'flex_focus', slot: 'Extra', title: '3 Minuten aktiv spielen', metric: 'activeSeconds', target: 180, icon: 'clock', requires: [] },
   { id: 'flex_skill', slot: 'Extra', title: 'Eine Manager-Fähigkeit aktivieren', metric: 'activeManagerSkills', target: 1, icon: 'skill', requires: ['assigned_manager_present'] },
+  { id: 'flex_contract', slot: 'Extra', title: 'Einen Liefervertrag pünktlich erfüllen', metric: 'contractsDelivered', target: 1, icon: 'contract', requires: ['contracts_open'] },
   { id: 'flex_stations', slot: 'Extra', title: '{n} verschiedene Stationen von Hand bedienen', metric: 'distinctManualStations', target: 2, icon: 'checklist', requires: [] },
 ];
 

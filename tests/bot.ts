@@ -20,6 +20,7 @@ import { createGame } from '../src/sim/init';
 import { RESEARCH, type ResearchId } from '../src/config/research';
 import { nextRank, startResearch, whyNot } from '../src/sim/research';
 import { step } from '../src/sim/sim';
+import { acceptContract, closeContract, deliverableUnits, refreshBoard } from '../src/sim/contracts';
 import type { GameState, StationId } from '../src/sim/types';
 
 /**
@@ -40,6 +41,8 @@ export interface BotOptions {
   stopWhen?: (s: GameState, t: number) => boolean;
   /** Use the Rezeptlabor (default true): always keep one research running, cheapest first. */
   research?: boolean;
+  /** Take Lieferverträge (default false): the best-paying offer that looks doable, collect when delivered. */
+  contracts?: boolean;
 }
 
 export interface BotEvent {
@@ -136,6 +139,30 @@ export function runBot(opts: BotOptions): BotResult {
       claimQuest(s);
       mark(`quest:${q.def.id}`, t);
       q = currentQuest(s);
+    }
+
+    // Lieferverträge
+    if (opts.contracts) {
+      refreshBoard(s);
+      const a = s.contracts.active;
+      if (a && a.status !== 'active') {
+        const p = closeContract(s);
+        mark(p ? `contract:${p.customer.id}` : 'contract-failed', t);
+      }
+      if (!s.contracts.active) {
+        let best = -1;
+        let bestPay = new Decimal(0);
+        const income = analyzeFlow(s).income;
+        s.contracts.offers.forEach((o, k) => {
+          if (!o) return;
+          const cap = o.kind === 'units' ? deliverableUnits(s, o.floor).mul(o.seconds) : income.mul(o.seconds);
+          if (o.target.lte(cap.mul(1.1)) && o.pay.gt(bestPay)) {
+            best = k;
+            bestPay = o.pay;
+          }
+        });
+        if (best >= 0) acceptContract(s, best);
+      }
     }
 
     // Skills

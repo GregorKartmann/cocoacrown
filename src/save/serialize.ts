@@ -1,13 +1,17 @@
 import { BALANCE } from '../config/balance';
 import { deser, ser } from '../core/num';
 import { SAVE_VERSION, defaultSettings } from '../sim/init';
-import type { BuyMode, GameState, LiftPhase, Manager, ManagerBonus, ManagerCategory, StationId, VanPhase, WinterState } from '../sim/types';
+import type { BuyMode, ContractOffer, ContractsState, GameState, LiftPhase, Manager, ManagerBonus, ManagerCategory, StationId, VanPhase, WinterState } from '../sim/types';
 import { migrate } from './migrations';
 import { RESEARCH_BY_ID, RESEARCH_IDS, type ResearchId } from '../config/research';
 import { defaultResearch } from '../sim/research';
 import { ACHIEVEMENTS, DAILY_BY_ID } from '../config/goals';
 import { localTimeZone } from '../sim/goals';
 import { LAST_DOOR, SHOP } from '../config/winter';
+import { CUSTOMER_BY_ID, type CustomerId } from '../config/contracts';
+import { TREASURY_BY_ID, TREASURY_IDS, type TreasuryId } from '../config/treasury';
+import type { GoalReward } from '../config/goals';
+import { defaultContracts } from '../sim/contracts';
 import { freshWinter } from '../sim/winter';
 
 const ACHIEVEMENT_IDS = new Set(ACHIEVEMENTS.map((a) => a.id));
@@ -46,7 +50,15 @@ export function toPlain(s: GameState): Record<string, unknown> {
     managers: s.managers.map((m) => ({ ...m, look: { ...m.look } })),
     boosts: s.boosts.map((b) => ({ ...b })),
     golden: { ...s.golden, active: s.golden.active ? { ...s.golden.active } : null },
-    prestige: { ...s.prestige, runStartEarned: ser(s.prestige.runStartEarned) },
+    prestige: { ...s.prestige, runStartEarned: ser(s.prestige.runStartEarned), treasury: { ...s.prestige.treasury } },
+    contracts: {
+      ...s.contracts,
+      offers: s.contracts.offers.map((o) => (o ? offerToPlain(o) : null)),
+      slotAt: [...s.contracts.slotAt],
+      active: s.contracts.active
+        ? { ...offerToPlain(s.contracts.active), progress: ser(s.contracts.active.progress), remaining: s.contracts.active.remaining, status: s.contracts.active.status }
+        : null,
+    },
     research: { ...s.research, ranks: { ...s.research.ranks }, active: s.research.active ? { ...s.research.active } : null },
     goals: { claimed: [...s.goals.claimed] },
     rewards: { ...s.rewards },
@@ -272,6 +284,8 @@ export function fromPlain(o: Obj): GameState {
       runStartEarned: dec(prestige.runStartEarned, 'prestige.runStartEarned'),
       runStartPlay: num(prestige.runStartPlay, 'prestige.runStartPlay', 0),
       bestFloor5: prestige.bestFloor5 === null || prestige.bestFloor5 === undefined ? null : num(prestige.bestFloor5, 'prestige.bestFloor5', 0),
+      spent: prestige.spent === undefined ? 0 : Math.min(int(prestige.spent, 'prestige.spent', 0, Number.MAX_SAFE_INTEGER), int(prestige.crowns, 'prestige.crowns', 0, Number.MAX_SAFE_INTEGER)),
+      treasury: decodeTreasury(prestige.treasury),
     },
     research: {
       points: int(research.points ?? 0, 'research.points', 0, Number.MAX_SAFE_INTEGER),
@@ -313,6 +327,7 @@ export function fromPlain(o: Obj): GameState {
       streakHireGiven: dailyRaw.streakHireGiven === true,
     },
     winter: decodeWinter(winterRaw),
+    contracts: decodeContracts(o.contracts),
     rng: int(o.rng, 'rng', 0, 4294967295) >>> 0,
     settings: {
       notation: settings.notation === 'scientific' ? 'scientific' : 'short',
@@ -325,6 +340,80 @@ export function fromPlain(o: Obj): GameState {
   };
   repairReferences(s);
   return s;
+}
+
+function offerToPlain(o: ContractOffer): Record<string, unknown> {
+  return {
+    id: o.id,
+    customer: o.customer,
+    kind: o.kind,
+    floor: o.floor,
+    target: ser(o.target),
+    seconds: o.seconds,
+    pay: ser(o.pay),
+    ruf: o.ruf,
+    bonus: o.bonus ? { ...o.bonus } : null,
+  };
+}
+
+function decodeBonus(v: unknown): GoalReward | null {
+  if (!v || typeof v !== 'object') return null;
+  const b = v as Obj;
+  if (b.kind !== 'recipePoints' && b.kind !== 'managerHireCredit' && b.kind !== 'goldenBean') return null;
+  return { kind: b.kind, amount: int(b.amount, 'contract.bonus', 1, 1000) };
+}
+
+function decodeOffer(v: unknown): ContractOffer | null {
+  if (!v || typeof v !== 'object') return null;
+  const o = v as Obj;
+  if (typeof o.customer !== 'string' || !(o.customer in CUSTOMER_BY_ID)) return null;
+  const kind = o.kind === 'value' ? 'value' : 'units';
+  return {
+    id: int(o.id, 'contract.id', 0, Number.MAX_SAFE_INTEGER),
+    customer: o.customer as CustomerId,
+    kind,
+    floor: kind === 'value' ? -1 : int(o.floor, 'contract.floor', 0, BALANCE.floors.length - 1),
+    target: dec(o.target, 'contract.target'),
+    seconds: num(o.seconds, 'contract.seconds', 1, 24 * 3600),
+    pay: dec(o.pay, 'contract.pay'),
+    ruf: int(o.ruf, 'contract.ruf', 0, 1000),
+    bonus: decodeBonus(o.bonus),
+  };
+}
+
+function decodeContracts(v: unknown): ContractsState {
+  const c = defaultContracts();
+  if (!v || typeof v !== 'object') return c;
+  const o = v as Obj;
+  c.open = o.open === true;
+  c.ruf = o.ruf === undefined ? 0 : int(o.ruf, 'contracts.ruf', 0, Number.MAX_SAFE_INTEGER);
+  c.nextId = o.nextId === undefined ? 1 : int(o.nextId, 'contracts.nextId', 1, Number.MAX_SAFE_INTEGER);
+  c.delivered = o.delivered === undefined ? 0 : int(o.delivered, 'contracts.delivered', 0, Number.MAX_SAFE_INTEGER);
+  c.failed = o.failed === undefined ? 0 : int(o.failed, 'contracts.failed', 0, Number.MAX_SAFE_INTEGER);
+  const offers = Array.isArray(o.offers) ? o.offers : [];
+  const slotAt = Array.isArray(o.slotAt) ? o.slotAt : [];
+  c.offers = c.offers.map((_, k) => decodeOffer(offers[k]));
+  c.slotAt = c.slotAt.map((_, k) => (slotAt[k] === undefined ? 0 : num(slotAt[k], 'contracts.slotAt', -1e12, 1e15)));
+  const a = o.active && typeof o.active === 'object' ? (o.active as Obj) : null;
+  const offer = a ? decodeOffer(a) : null;
+  if (a && offer) {
+    const status = a.status === 'delivered' || a.status === 'failed' ? a.status : 'active';
+    c.active = {
+      ...offer,
+      progress: dec(a.progress, 'contract.progress'),
+      remaining: num(a.remaining, 'contract.remaining', 0, 24 * 3600),
+      status,
+    };
+  }
+  return c;
+}
+
+function decodeTreasury(v: unknown): Partial<Record<TreasuryId, number>> {
+  const out: Partial<Record<TreasuryId, number>> = {};
+  if (!v || typeof v !== 'object') return out;
+  const t = v as Obj;
+  for (const id of TREASURY_IDS) if (t[id] !== undefined) out[id] = int(t[id], `treasury.${id}`, 0, TREASURY_BY_ID[id].costs.length);
+  return out;
 }
 
 function dayList(v: unknown): number[] {

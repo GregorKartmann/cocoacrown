@@ -2603,3 +2603,448 @@ button {
 .w-decor-item.has img {
   filter: none;
 }
+
+/* ------------------------------------------------------------------ */
+/* 0.8.0: Lieferverträge, Kronen-Schatzkammer, 6-item navigation        */
+/* ------------------------------------------------------------------ */
+
+.nav {
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1px;
+}
+.nav button {
+  font-size: 10.5px;
+  letter-spacing: -0.1px;
+}
+.nav img {
+  width: 28px;
+  height: 28px;
+}
+.sheet-head > img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  flex: none;
+}
+.tabs.two {
+  grid-template-columns: repeat(2, 1fr);
+}
+.btn.ghost {
+  background: transparent;
+  border-color: rgba(138, 95, 34, 0.55);
+  box-shadow: none;
+  color: var(--ink-soft);
+}
+
+/* contract paper */
+.ct-paper {
+  position: relative;
+  margin: 0 0 12px;
+  padding: 4px 6px 6px;
+  border-style: solid;
+  border-width: 22px;
+  border-image: url('../assets/art/vertraege/vertragspapier.webp') 11% fill / 22px stretch;
+  color: var(--ink);
+}
+.ct-paper.big {
+  border-width: 26px;
+  border-image-width: 26px;
+}
+.ct-paper.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  opacity: 0.75;
+}
+.ct-seal {
+  position: absolute;
+  top: -20px;
+  right: -16px;
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  transform: rotate(12deg);
+  pointer-events: none;
+}
+.ct-paper.big .ct-seal {
+  width: 66px;
+  height: 66px;
+  top: -24px;
+  right: -18px;
+}
+.ct-seal.faded {
+  opacity: 0.35;
+  filter: grayscale(0.6);
+}
+.ct-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-right: 34px;
+}
+.ct-crest {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+.ct-head b {
+  display: block;
+  font-family: var(--display);
+  font-size: 15.5px;
+  line-height: 1.15;
+}
+.ct-head small {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.ct-order {
+  margin: 8px 0 4px;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 19px;
+  color: #5e1520;
+}
+.ct-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.ct-progress .bar {
+  flex: 1;
+  height: 11px;
+}
+.ct-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 2px;
+  font-size: 13px;
+}
+.ct-status {
+  font-weight: 700;
+}
+.ct-paper.delivered .ct-status {
+  color: #1d5550;
+}
+.ct-paper.failed .ct-status {
+  color: #7d1f2c;
+}
+.ct-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.ct-time img {
+  width: 18px;
+  height: 22px;
+  object-fit: contain;
+}
+.ct-pay {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 6px 0 2px;
+}
+.ct-pay span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px 2px 4px;
+  border-radius: 10px;
+  border: 1.5px solid #c8963e;
+  background: rgba(255, 247, 226, 0.85);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.ct-pay img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+.ct-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.ct-actions .btn.mint {
+  flex: 1;
+}
+.ct-actions .btn.block {
+  flex: 1;
+}
+.ct-ruf {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 6px;
+}
+.ct-ruf img {
+  flex: none;
+  width: 40px;
+  height: 44px;
+  object-fit: contain;
+}
+.ct-ruf > div {
+  flex: 1;
+}
+.ct-ruf .bar {
+  height: 11px;
+  margin-bottom: 3px;
+}
+.ct-ruf small {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.ct-customers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.ct-customer {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  padding: 6px 4px;
+  border-radius: 12px;
+  border: 1.5px solid #e6d2ab;
+  background: #fbf3e2;
+  text-align: center;
+  font-size: 11.5px;
+  line-height: 1.2;
+  color: var(--ink-soft);
+}
+.ct-customer img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  filter: grayscale(1) opacity(0.45);
+}
+.ct-customer small {
+  font-size: 10.5px;
+}
+.ct-customer.open {
+  border-color: #c8963e;
+  background: #fff7e2;
+  color: var(--ink);
+  font-weight: 600;
+}
+.ct-customer.open img {
+  filter: none;
+}
+.ct-customer.open small {
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+/* HUD strip */
+.ct-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 5px 10px 5px 6px;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.ct-strip-crest {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+.ct-strip-body {
+  flex: 1;
+  min-width: 0;
+}
+.ct-strip-title {
+  font-weight: 700;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ct-strip .bar {
+  height: 8px;
+  margin-top: 3px;
+}
+.ct-strip-time {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 700;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.ct-strip-time img {
+  width: 16px;
+  height: 20px;
+  object-fit: contain;
+}
+.ct-strip-time img.ct-strip-seal {
+  width: 30px;
+  height: 30px;
+}
+.ct-strip.delivered {
+  background: linear-gradient(180deg, #fff6d4, #ffe9a3);
+  animation: glow 1.2s ease-in-out infinite;
+}
+
+/* Kronen-Schatzkammer */
+.tabs button {
+  position: relative;
+}
+.treasury {
+  border-radius: 14px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #3a2116, #2a1712);
+  border: 2px solid #8a5f22;
+  box-shadow: 0 3px 0 rgba(42, 23, 18, 0.45);
+  padding-bottom: 8px;
+}
+.treasury-hero {
+  position: relative;
+  aspect-ratio: 810 / 500;
+  background: url('../assets/art/schatzkammer/kulisse_hoch.webp') top center / 100% auto no-repeat;
+}
+.treasury-head {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px 4px 6px;
+  border-radius: 999px;
+  border: 1.5px solid #c8963e;
+  background: rgba(42, 23, 18, 0.88);
+  color: #f6dc95;
+  white-space: nowrap;
+}
+.treasury-head img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+.treasury-head b {
+  font-family: var(--display);
+  font-size: 22px;
+  line-height: 1;
+}
+.treasury-head span {
+  font-size: 12.5px;
+  color: #e9d6b2;
+}
+.treasury-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 10px 6px;
+  font-size: 11.5px;
+  line-height: 1.3;
+  color: #e9d6b2;
+}
+.treasury-note img {
+  flex: none;
+  width: 22px;
+  height: 22px;
+}
+.treasury-list {
+  display: grid;
+  gap: 6px;
+  padding: 0 8px;
+}
+.treasury-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 6px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(200, 150, 62, 0.55);
+  background: rgba(20, 10, 6, 0.35);
+  color: #f7ecd6;
+}
+.treasury-row.owned {
+  border-color: #c8963e;
+  background: rgba(90, 52, 28, 0.45);
+}
+.treasury-icon {
+  flex: none;
+  width: 46px;
+  height: 46px;
+}
+.treasury-icon img {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+.treasury-body {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+.treasury-body b {
+  font-size: 13.5px;
+  line-height: 1.15;
+}
+.treasury-body small {
+  font-size: 11px;
+  color: #d9c39c;
+  line-height: 1.2;
+}
+.treasury-value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #f6dc95;
+  white-space: nowrap;
+}
+.treasury-pips {
+  display: flex;
+  gap: 2px;
+}
+.treasury-pips i {
+  width: 9px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(247, 236, 214, 0.25);
+}
+.treasury-pips i.on {
+  background: #f6dc95;
+}
+.treasury-row .btn.small {
+  flex: none;
+  min-width: 62px;
+  padding: 0 8px;
+}
+.treasury-row .btn img {
+  width: 20px;
+  height: 20px;
+  vertical-align: -5px;
+  margin-right: 3px;
+}
+.treasury-done {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  margin: 0 14px;
+}

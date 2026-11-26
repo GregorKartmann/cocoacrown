@@ -1,3 +1,5 @@
+import { checkContractsOpen, contractsOnBrandSale } from './contracts';
+import { applyRunStart, startFloorLevel } from './treasury';
 import { BALANCE } from '../config/balance';
 import { CATEGORY_BONUSES, FIRST_NAMES, LAST_NAMES } from '../config/content';
 import { QUESTS } from '../config/quests';
@@ -81,8 +83,9 @@ export function unlockFloor(s: GameState, i: number): boolean {
   if (s.money.lt(cost)) return false;
   s.money = s.money.sub(cost);
   f.unlocked = true;
-  f.level = 1;
+  f.level = startFloorLevel(s, i);
   addResearchPoints(s, POINTS.floor);
+  checkContractsOpen(s);
   checkLabOpen(s);
   updateRecords(s);
   // A manager who ran this floor before the last brand sale returns on their own.
@@ -262,6 +265,7 @@ export function sellBrand(s: GameState): number {
   addResearchPoints(s, POINTS.brandSale);
   s.prestige.runStartEarned = s.stats.totalEarned;
   s.prestige.runStartPlay = s.stats.playSeconds;
+  contractsOnBrandSale(s);
 
   const keep: StationId[] = ['f0', 'lift', 'ship'];
   for (const m of s.managers) {
@@ -279,6 +283,7 @@ export function sellBrand(s: GameState): number {
   for (const m of s.managers) if (m.assignedTo) setStationManager(s, m.assignedTo, m.id);
   s.boosts = [];
   s.golden = { nextIn: BALANCE.golden.firstSpawn, active: null };
+  applyRunStart(s);
   return gained;
 }
 

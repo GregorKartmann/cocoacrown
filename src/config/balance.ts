@@ -189,6 +189,13 @@ export const BALANCE = {
      * less, so "when do I sell?" stays a real decision.
      */
     divisor: 1e7,
+    /**
+     * From this many crowns on the root gets steeper (cube root instead of
+     * square root): doubling the crowns then needs 8× the earnings instead of
+     * 4×, which keeps late runs from collapsing to a few minutes.
+     */
+    tailFrom: 100,
+    tailRoot: 3,
     /** Income bonus per crown (+10 %, additive). */
     perCrown: 0.1,
     /**

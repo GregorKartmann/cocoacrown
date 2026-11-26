@@ -3,7 +3,7 @@ import { BALANCE } from '../src/config/balance';
 import { D } from '../src/core/num';
 import { checksum, decodeSave, encodeSave, toPlain } from '../src/save/serialize';
 import { sellBrand, unlockFloor } from '../src/sim/actions';
-import { crownFactor, crownsAvailable, crownsByEarnings, nextCrownAt, prestigeUnlocked, shipStats } from '../src/sim/formulas';
+import { crownFactor, crownsAvailable, crownsByEarnings, earningsForCrowns, nextCrownAt, prestigeUnlocked, shipStats } from '../src/sim/formulas';
 import { createGame } from '../src/sim/init';
 import type { GameState } from '../src/sim/types';
 import { runBot } from './bot';
@@ -30,7 +30,17 @@ describe('Prestige: Kronen-Formel', () => {
     expect(crownsByEarnings(D(4 * DIV))).toBe(2);
     expect(crownsByEarnings(D(100 * DIV))).toBe(10);
     // huge numbers stay finite
-    expect(crownsByEarnings(D('1e80'))).toBeGreaterThan(1e30);
+    expect(crownsByEarnings(D('1e80'))).toBeGreaterThan(1e20);
+  });
+
+  it('ab 100 Kronen gilt die Kubikwurzel: doppelt so viele Kronen brauchen 8× Umsatz', () => {
+    expect(crownsByEarnings(D(10000 * DIV))).toBe(100);
+    expect(crownsByEarnings(D(10000 * DIV).mul(0.9999))).toBe(99);
+    expect(crownsByEarnings(D(80000 * DIV))).toBe(200);
+    expect(crownsByEarnings(D(80000 * DIV).mul(0.999))).toBe(199);
+    expect(earningsForCrowns(200).div(DIV).toNumber()).toBeCloseTo(80000, 6);
+    expect(earningsForCrowns(100).eq(10000 * DIV)).toBe(true);
+    for (const k of [101, 150, 333, 1000]) expect(crownsByEarnings(earningsForCrowns(k).mul(1.0000001))).toBe(k);
   });
 
   it('Bereits erhaltene Kronen werden abgezogen, die nächste Krone liegt bei (k+1)² · Teiler', () => {

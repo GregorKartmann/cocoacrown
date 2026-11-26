@@ -152,6 +152,7 @@ export function eligible(s: GameState, t: DailyTemplate): boolean {
     if (r === 'manual_production_possible' && !unlocked.some((x) => !x.f.managerId)) return false;
     if (r === 'two_floors_unlocked' && unlocked.length < 2) return false;
     if (r === 'assigned_manager_present' && !s.managers.some((m) => m.assignedTo)) return false;
+    if (r === 'contracts_open' && !s.contracts.open) return false;
     if (r === 'affordable_production_upgrade_possible') {
       const cheapest = unlocked.map((x) => nextCost(s, `f${x.i}` as StationId)).reduce((a, b) => (b.lt(a) ? b : a));
       if (!soon(s, cheapest)) return false;
